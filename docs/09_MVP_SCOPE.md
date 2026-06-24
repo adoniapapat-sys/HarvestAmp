@@ -277,6 +277,7 @@ These are valuable but should not block the first demo if Tier 1 workflows are n
 | WF-012 | CSA Newsletter Draft | Green Basket | Must require approval before sending to customers |
 | WF-013 | Restaurant Availability Draft | Green Basket | Must require approval before external sharing |
 | WF-014 | High Tunnel Weather Watch | Green Basket | Good monitoring-loop demo |
+| WF-015 | Irrigation Schedule / Water Request Advisor | Green Basket | Mock/manual-entry only for MVP extension. Real portal integration deferred. Does not change current Tier 1 MVP cut line. |
 
 ### 8.3 Tier 3 workflows: Post-MVP
 

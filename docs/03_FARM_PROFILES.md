@@ -2254,6 +2254,21 @@ Convert the workflows and prompts in this file into detailed scenario scripts.
 
 Turn the evaluation criteria into test cases.
 
+## 16.6 Future Farm Profile Schema and Optional Irrigation Fields
+
+For future schema development and platform expansion, the following optional irrigation fields should be recognized in the farm profile schema and profile field list:
+- `irrigation_status`: Indicates whether fields support irrigation (e.g., active, none, inactive).
+- `water_source`: The source of water (e.g., district, canal, groundwater, surface water).
+- `irrigation_district_or_provider`: The name of the irrigation district or canal provider.
+- `portal_connection_status`: Connection status of the water provider's portal.
+- `turnout_or_field_delivery_ids`: Identifiers for the gate, turnout, or delivery point.
+- `allocation_units`: The units of allocation (e.g., acre-feet, shares, miner's inches).
+- `usual_request_lead_time`: Required advance notice for delivery requests (e.g., 24h, 48h).
+- `irrigation_method`: The delivery method (e.g., drip, overhead sprinkler, flood).
+- `irrigation_record_status`: Status of current irrigation recordkeeping (e.g., complete, missing).
+
+Note: Do not force irrigation onto Prairie View Farms fields (which remain non-irrigated). For Green Basket Organics, preserve existing drip/overhead irrigation context and only add provider/portal fields if clearly marked synthetic/future.
+
 ---
 
 ## 17. Open Questions
