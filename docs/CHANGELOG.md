@@ -17,6 +17,10 @@ HarvestAmp follows a documentation-first build approach. Major product and archi
 
 ## [Unreleased]
 
+### Added
+- Added irrigation scheduling / water-request domain to planning docs (data-source entries, risk/human-review policy, agent contracts, sample scenarios, evaluation expectations, and next build tasks).
+- Added optional irrigation fields to `03_FARM_PROFILES.md`.
+
 ### Planned
 
 - Add first UI prototype for weekly plans, procurement recommendations, human-review gates, and disclosure previews.

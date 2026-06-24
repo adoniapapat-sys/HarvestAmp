@@ -1177,6 +1177,35 @@ Review the modular layout and integration boundaries after the first demo.
 
 ---
 
+## D-032: Recognize irrigation scheduling and water-request workflows as a HarvestAmp domain
+
+Status: accepted  
+Date: 2026-06-24  
+Owner: Product owner / architecture owner / risk owner  
+Related docs: `03_FARM_PROFILES.md`, `04_DATA_SOURCES.md`, `05_AGENT_CONTRACTS.md`, `06_RISK_AND_HUMAN_REVIEW_POLICY.md`, `07_SAMPLE_SCENARIOS.md`, `08_EVALUATION_TESTS.md`, `09_MVP_SCOPE.md`, `10_BUILD_PLAN.md`, `configs/human_review_rules.yaml`
+
+### Context
+
+Many irrigated farming regions require farmers to log into irrigation district, canal company, water association, or water-management websites to request irrigation times, flow rates, or water volumes for fields.
+
+### Decision
+
+HarvestAmp will recognize irrigation scheduling and water-request workflows as a supported domain, using mock/manual/uploaded data first. Real credentialed irrigation portal integration is deferred until Credential Broker, Tool Gateway, human-review gates, audit logging, and provider permissions are ready.
+
+### Rationale
+
+Irrigation scheduling is operationally important, but it carries credential, external-action, resource-allocation, and district-rule risk.
+
+### Consequences
+
+Irrigation workflows require task-scoped context, no raw credentials in chat, user approval before external submission, and expert/responsible-human review where allocation or district-rule uncertainty exists.
+
+### Follow-up
+
+Implement a mock/manual irrigation workflow after this documentation/config patch is accepted.
+
+---
+
 # 6. Superseded Decisions
 
 ## S-001: FarmHand working name

@@ -1274,6 +1274,34 @@ Each task should have:
 
 ---
 
+### Task 16: Irrigation scheduling mock workflow
+
+**Goal:** Implement a mock/manual irrigation scheduling and water-request workflow as a Tier 2 extension.
+
+**Read first:**
+- `04_DATA_SOURCES.md`
+- `05_AGENT_CONTRACTS.md`
+- `06_RISK_AND_HUMAN_REVIEW_POLICY.md`
+- `07_SAMPLE_SCENARIOS.md`
+- `08_EVALUATION_TESTS.md`
+- `09_MVP_SCOPE.md`
+
+**Deliverables:**
+- Create irrigation schedule fixtures.
+- Create irrigation request scenarios.
+- Validate human-review gates.
+- Validate credential refusal and secure setup routing.
+- Validate Action Agent blocks unapproved portal submission.
+
+**Acceptance:**
+- Automated tests pass for IRR-001 through IRR-005.
+- No raw irrigation portal credentials in chat, context, logs, or prompts.
+- User approval is required before any irrigation request submission.
+- Action Agent blocks unapproved portal submissions.
+- Real portal connector is deferred until Credential Broker, Tool Gateway, approval gates, and audit logging are stable.
+
+---
+
 ## 6. Recommended First Vertical Slice
 
 The first vertical slice should be:
