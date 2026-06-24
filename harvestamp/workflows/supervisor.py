@@ -266,11 +266,18 @@ class Supervisor:
         if topic in ["diesel_purchase_window", "weekly_plan_pvf", "weekly_plan_gbo", "farmers_market", "spray_window"]:
             grant = self.broker.request_capability_grant(farm_profile, user_id, "weather_tool")
             if grant["authorized"]:
-                res = self.gateway.get_weather(grant, requesting_farm_id, target_farm_id, observations)
+                res = self.gateway.get_weather(
+                    grant,
+                    requesting_farm_id,
+                    target_farm_id,
+                    observations,
+                    farm_profile=farm_profile,
+                    evidence_board=evidence_board
+                )
                 evidence_board.add_evidence(
                     evidence_id=res["result_id"],
                     source_id=res["source_id"],
-                    source_name="National Weather Service Forecast",
+                    source_name=res.get("source_name", "National Weather Service Forecast"),
                     trust_tier=res["trust_tier"],
                     freshness_status=res["freshness_status"],
                     privacy_class=res["privacy_class"],
