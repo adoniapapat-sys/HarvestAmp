@@ -126,6 +126,9 @@ Any future work, validations, or open questions.
 | D-029 | Build one vertical slice before broad coverage | accepted |
 | D-030 | Avoid over-agentizing the system | accepted |
 | D-031 | Modular package layout and mock runner setup | accepted |
+| D-032 | Recognize irrigation scheduling and water-request workflows as a HarvestAmp domain | accepted |
+| D-033 | Establish MCP Connector Architecture | accepted |
+| D-034 | Implement National Weather Service read-only connector in shadow mode | accepted |
 
 ---
 
@@ -1203,6 +1206,58 @@ Irrigation workflows require task-scoped context, no raw credentials in chat, us
 ### Follow-up
 
 Implement a mock/manual irrigation workflow after this documentation/config patch is accepted.
+
+---
+
+## D-033: Establish MCP Connector Architecture
+
+Status: accepted  
+Date: 2026-06-24  
+Owner: Architecture owner  
+Related docs: `02_AGENT_ARCHITECTURE.md`, `04_DATA_SOURCES.md`, `05_AGENT_CONTRACTS.md`
+
+### Context
+
+HarvestAmp needs to connect to outside services. MCP-compatible connectors are the preferred architecture, but agents must not call MCP servers directly. All connectors must stay behind Credential Broker, Tool Gateway, source metadata, task-scoped context, and audit logging.
+
+### Decision
+
+Establish the Model Context Protocol (MCP) connector architecture for HarvestAmp where the Tool Gateway mediates all connector access, preventing specialist agents from invoking external APIs or connectors directly.
+
+### Rationale
+
+This prevents credential leakage to LLM prompts, enforces consistent metadata tracking, and ensures audit logging for all external integrations.
+
+### Consequences
+
+- Specialist agents request abstract capabilities instead of direct connector targets.
+- Tool Gateway normalizes output to `ConnectorResult` including `SourceMetadata`.
+
+---
+
+## D-034: Implement National Weather Service read-only connector in shadow mode
+
+Status: accepted  
+Date: 2026-06-24  
+Owner: Architecture owner / security owner  
+Related docs: `04_DATA_SOURCES.md`, `08_EVALUATION_TESTS.md`, `10_BUILD_PLAN.md`
+
+### Context
+
+We need to implement the first read-only connector for NWS weather forecasts without requiring internet for test suites by default, preserving the mock observations fallback, and keeping farm locations confidential.
+
+### Decision
+
+Implement the NWS Weather Connector in shadow mode. The connector rounds coordinates to 4 decimal places for privacy, supports both offline mock mode and live mode (env-flagged with User-Agent check), and logs the NWS results as shadow evidence to the Evidence Board while falling back to mock observations for agent reasoning.
+
+### Rationale
+
+Enables live network testing without breaking offline test determinism or altering agent prompts/logic, ensuring safe, privacy-preserving validation.
+
+### Consequences
+
+- NWSWeatherConnector returns normalized `ConnectorResult`.
+- If NWS connector fails (unavailable/stale/error/timeout/denied), the system falls back to mock fixture weather (if available) but sets `fallback_used = True` and lowers the WeatherAgent's confidence to `"low"`.
 
 ---
 

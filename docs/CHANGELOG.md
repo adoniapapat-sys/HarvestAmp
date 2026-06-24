@@ -18,11 +18,14 @@ HarvestAmp follows a documentation-first build approach. Major product and archi
 ## [Unreleased]
 
 ### Added
+- Implemented the first read-only connector: National Weather Service (NWS) forecast API adapter in `harvestamp/connectors/nws_weather.py` supporting coordinate rounding to 4 decimal places, live network querying (behind environment variables and User-Agent safety checks), and default offline mock mode.
+- Integrated the NWS Weather Connector in `ToolGateway.get_weather` in shadow mode: logs connector results as shadow evidence to the Evidence Board, but returns mock weather observations for actual agent execution.
+- Added NWS failure fallback mapping: if NWS is stale, unavailable, or errors, falls back to mock fixture weather (if available) with `fallback_used=True` and `fallback_reason` metadata, and lowers WeatherAgent finding confidence to `"low"`.
+- Added unit tests in `tests/test_nws_weather_connector.py` covering successful weather responses, NWS failure status codes, Evidence Board recording, gateway fallback mediation, WeatherAgent confidence degradation, and simulated live mode paths.
 - Added irrigation scheduling / water-request domain to planning docs (data-source entries, risk/human-review policy, agent contracts, sample scenarios, evaluation expectations, and next build tasks).
 - Added optional irrigation fields to `03_FARM_PROFILES.md`.
 
 ### Planned
-
 - Add first UI prototype for weekly plans, procurement recommendations, human-review gates, and disclosure previews.
 
 ---

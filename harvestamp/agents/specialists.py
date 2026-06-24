@@ -94,10 +94,33 @@ class WeatherAgent(BaseAgent):
         forecast = weather_obs.get("payload", {}) if weather_obs else {}
         evidence_ids = [weather_obs.get("result_id", "weather_ev")] if weather_obs else []
         
+        fallback_used = weather_obs.get("fallback_used", False) if weather_obs else False
+        fallback_reason = weather_obs.get("fallback_reason", "") if weather_obs else ""
+        nws_status = weather_obs.get("status", "success") if weather_obs else "success"
+        
+        # If fallback is used and there is no forecast payload, weather data is completely unavailable
+        if fallback_used and not forecast:
+            summary = "Weather forecast data is completely unavailable. Live weather connector failed."
+            if fallback_reason:
+                summary += f" ({fallback_reason})"
+            recommendation = "Verify current local weather conditions manually before scheduling fieldwork or market setup."
+            return self.create_finding(
+                work_item=work_item,
+                topic="fieldwork_weather" if "gbo" not in topic else "market_day_weather",
+                summary=summary,
+                recommendation=recommendation,
+                urgency="today",
+                confidence="low",
+                evidence_ids=evidence_ids,
+                assumptions=["No fallback weather data is available."],
+                missing_data=["Fresh weather forecast data"]
+            )
+            
+        finding = None
         if topic == "spray_window":
             summary = "Tomorrow morning has a favorable wind window (6-10 mph) and low rain probability. Afternoon wind speed rises to 15-22 mph with evening storm chance."
             recommendation = "Morning window is possible for spraying West Ridge. Afternoon is high-wind risk and not recommended."
-            return self.create_finding(
+            finding = self.create_finding(
                 work_item, "spray_window", summary, recommendation, "today", "high", evidence_ids,
                 assumptions=["No rain occurs earlier than forecast."],
                 missing_data=["Planned product labels for exact wind limits"]
@@ -106,7 +129,7 @@ class WeatherAgent(BaseAgent):
         elif topic == "weekly_plan_pvf":
             summary = "Friday offers the best fieldwork window with favorable wind and low rain probability. Caution is advised on Wednesday due to rain forecast and Thursday due to possible high wind."
             recommendation = "Target Friday as the primary fieldwork window. Exercise caution on Wednesday (rain) and Thursday (wind)."
-            return self.create_finding(
+            finding = self.create_finding(
                 work_item, "fieldwork_weather", summary, recommendation, "this_week", "medium", evidence_ids,
                 assumptions=["Showers and winds follow the predicted timing and severity."],
                 missing_data=["Real-time wind and rain sensor updates"]
@@ -115,7 +138,7 @@ class WeatherAgent(BaseAgent):
         elif topic == "weekly_plan_gbo":
             summary = "Saturday market weather risk includes forecast scattered morning showers and 10-16 mph wind."
             recommendation = "Use tent weights and rain covers for Saturday morning setup. Conduct a high tunnel ventilation and humidity check to manage moisture."
-            return self.create_finding(
+            finding = self.create_finding(
                 work_item, "market_day_weather", summary, recommendation, "this_week", "medium", evidence_ids,
                 assumptions=["Saturday morning rain holds as scattered showers."],
                 missing_data=["High tunnel internal humidity readings"]
@@ -124,27 +147,36 @@ class WeatherAgent(BaseAgent):
         elif topic in ["diesel_purchase_window", "fuel_buy_window"]:
             summary = "Friday offers the best fieldwork window with favorable wind and low rain probability. Rain and wind caution is advised earlier in the week, affecting spray and fieldwork prep."
             recommendation = "Plan near-term diesel usage around upcoming spraying, scouting, and wheat-harvest preparation. Target Friday as the primary fieldwork window."
-            return self.create_finding(
+            finding = self.create_finding(
                 work_item, "fieldwork_weather", summary, recommendation, "this_week", "medium", evidence_ids,
                 assumptions=["Fieldwork windows follow predicted weather timing."],
                 missing_data=["Real-time wind and rain sensor updates"]
             )
-
+            
         else:
             farm_type = context.get("farm_type", "")
             if farm_type == "small_organic_direct_market":
                 saturday_forecast = forecast.get("saturday_market", "uncertain")
                 summary = f"Saturday market weather forecast: {saturday_forecast}."
                 recommendation = "Prepare tent weights and rain covers for Saturday morning setup."
-                return self.create_finding(
+                finding = self.create_finding(
                     work_item, "market_day_weather", summary, recommendation, "this_week", "medium", evidence_ids
                 )
             else:
                 summary = "Friday offers the best fieldwork window with favorable wind and low rain probability. Rain and wind caution is advised earlier in the week."
                 recommendation = "Plan near-term diesel usage around upcoming spraying, scouting, and wheat-harvest preparation. Target Friday as the primary fieldwork window."
-                return self.create_finding(
+                finding = self.create_finding(
                     work_item, "fieldwork_weather", summary, recommendation, "this_week", "medium", evidence_ids
                 )
+                
+        if fallback_used and finding:
+            finding["confidence"] = "low"
+            finding["summary"] += f" (Warning: live weather data was unavailable or stale; using cached fallback. NWS status: {nws_status})"
+            finding["assumptions"].append("Using cached weather data due to connection issues.")
+            if "Fresh weather forecast data" not in finding["missing_data"]:
+                finding["missing_data"].append("Fresh weather forecast data")
+                
+        return finding
 
 class ProcurementAgent(BaseAgent):
     """Analyzes prices, quotes, inventories, and reorders."""
