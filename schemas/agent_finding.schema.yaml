@@ -1,0 +1,92 @@
+# schemas/agent_finding.schema.yaml
+$schema: "http://json-schema.org/draft-07/schema#"
+title: AgentFinding
+type: object
+required:
+  - finding_id
+  - workflow_id
+  - agent_name
+  - farm_id
+  - topic
+  - summary
+  - urgency
+  - confidence
+  - evidence_ids
+  - human_review
+properties:
+  finding_id:
+    type: string
+  workflow_id:
+    type: string
+  agent_name:
+    type: string
+  farm_id:
+    type: string
+  user_id:
+    type: string
+  topic:
+    type: string
+  summary:
+    type: string
+  recommendation:
+    type: string
+  urgency:
+    type: string
+  confidence:
+    type: string
+  impact_areas:
+    type: array
+    items:
+      type: string
+  evidence_ids:
+    type: array
+    items:
+      type: string
+  assumptions:
+    type: array
+    items:
+      type: string
+  missing_data:
+    type: array
+    items:
+      type: string
+  data_sensitivity_used:
+    type: array
+    items:
+      type: string
+  allowed_viewer_roles:
+    type: array
+    items:
+      type: string
+  prohibited_disclosures:
+    type: array
+    items:
+      type: string
+  human_review:
+    type: object
+    required:
+      - required
+      - review_type
+      - reason
+      - status
+    properties:
+      required:
+        type: boolean
+      review_type:
+        type: string
+      risk_tier:
+        type: string
+      status:
+        type: string
+      reason:
+        type: array
+        items:
+          type: string
+      recommended_reviewer:
+        type: array
+        items:
+          type: string
+      approval_required_before:
+        type: array
+        items:
+          type: string

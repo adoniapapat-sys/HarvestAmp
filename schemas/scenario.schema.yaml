@@ -1,0 +1,44 @@
+# schemas/scenario.schema.yaml
+$schema: "http://json-schema.org/draft-07/schema#"
+title: Scenario
+type: object
+required:
+  - scenario_id
+  - name
+  - farm_profile
+  - user_role
+  - prompt
+  - primary_goal
+properties:
+  scenario_id:
+    type: string
+  name:
+    type: string
+  farm_profile:
+    type: string
+  user_id:
+    type: string
+  user_role:
+    type: string
+  prompt:
+    type: string
+  primary_goal:
+    type: string
+  expected_agents:
+    type: array
+    items:
+      type: string
+  expected_human_review:
+    type: object
+    required:
+      - required
+      - review_type
+    properties:
+      required:
+        type: boolean
+      review_type:
+        type: string
+      reasons:
+        type: array
+        items:
+          type: string

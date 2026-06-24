@@ -1,0 +1,32 @@
+# schemas/audit_event.schema.yaml
+$schema: "http://json-schema.org/draft-07/schema#"
+title: AuditEvent
+type: object
+required:
+  - event_id
+  - user_id
+  - farm_id
+  - action
+  - timestamp
+  - result
+properties:
+  event_id:
+    type: string
+  workflow_id:
+    type: string
+  user_id:
+    type: string
+  agent_id:
+    type: string
+  farm_id:
+    type: string
+  action:
+    type: string
+  data_category:
+    type: string
+  timestamp:
+    type: string
+  approval_state:
+    type: string
+  result:
+    type: string

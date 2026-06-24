@@ -1,0 +1,43 @@
+# schemas/action_pack.schema.yaml
+$schema: "http://json-schema.org/draft-07/schema#"
+title: ActionPack
+type: object
+required:
+  - action_pack_id
+  - farm_id
+  - workflow_id
+  - recommendations
+  - proposed_actions
+  - human_review_status
+  - status
+properties:
+  action_pack_id:
+    type: string
+  farm_id:
+    type: string
+  workflow_id:
+    type: string
+  recommendations:
+    type: array
+    items:
+      type: object
+  proposed_actions:
+    type: array
+    items:
+      type: object
+  evidence_summary:
+    type: array
+    items:
+      type: object
+  warnings:
+    type: array
+    items:
+      type: string
+  missing_data:
+    type: array
+    items:
+      type: string
+  human_review_status:
+    type: object
+  status:
+    type: string

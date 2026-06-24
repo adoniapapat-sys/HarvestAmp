@@ -1,0 +1,23 @@
+# schemas/common_defs.schema.yaml
+$schema: "http://json-schema.org/draft-07/schema#"
+title: CommonDefinitions
+type: object
+definitions:
+  confidence:
+    type: string
+    enum: [high, medium, low, insufficient_data]
+  urgency:
+    type: string
+    enum: [high, medium, low, today, this_week, info]
+  sensitivity:
+    type: string
+    enum: [Public, Farm Internal, Farm Confidential, Farm Restricted, Credentials and Secrets]
+  trust_tier:
+    type: string
+    enum: ["T1 Official / primary", "T2 Authorized partner", "T3 User-entered", "T4 Curated advisory", "T5 General web / unverified"]
+  freshness:
+    type: string
+    enum: [fresh, acceptable, stale, unknown]
+  approval_status:
+    type: string
+    enum: [draft, review_not_required, needs_soft_confirmation, needs_user_approval, needs_expert_review, needs_admin_review, approved, approved_with_edits, rejected, blocked, executed, logged]

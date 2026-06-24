@@ -1,0 +1,158 @@
+# fixtures/farms/green_basket_organics.yaml
+farm_id: "GBO_DIRECT_001"
+farm_name: "Green Basket Organics"
+farm_type: "small_organic_direct_market"
+location: "Hudson Valley, New York, United States"
+scale: "8.5 total acres, 4.2 cropped acres"
+sales_model: "Direct-to-consumer (CSA, Farmers Market) and local wholesale (restaurants)"
+users:
+  - user_id: "gbo_owner_001"
+    name: "Ari Morgan"
+    role: "farm_owner"
+    permissions:
+      - view_all_farm_data
+      - approve_purchases
+      - approve_customer_messages
+      - approve_supplier_messages
+      - manage_users
+      - connect_data_sources
+      - export_reports
+  - user_id: "gbo_field_lead_001"
+    name: "Seasonal Field Lead"
+    role: "field_lead"
+    permissions:
+      - view_assigned_tasks
+      - update_harvest_counts
+      - update_packaging_counts
+      - submit_pest_notes
+      - upload_crop_photos
+    restrictions:
+      - cannot_view_full_financials
+      - cannot_approve_external_messages
+      - cannot_change_certification_records
+  - user_id: "gbo_market_staff_001"
+    name: "Market Staff User"
+    role: "market_staff"
+    permissions:
+      - view_market_pack_list
+      - update_market_sales_notes
+      - report_leftover_inventory
+    restrictions:
+      - cannot_view_supplier_quotes
+      - cannot_view_certification_documents
+      - cannot_approve_purchases
+  - user_id: "gbo_certifier_contact_001"
+    name: "Organic Certifier Reviewer"
+    role: "external_reviewer"
+    permissions:
+      - view_certification_packet_when_shared
+      - comment_on_input_records_when_shared
+    restrictions:
+      - no_default_access
+fields: []
+growing_areas:
+  - area_id: "GBO_AREA_FIELD_A"
+    name: "Field A - Market Garden"
+    area_type: "outdoor_beds"
+    cropped_acres: 1.4
+    bed_count: 52
+    primary_crops: [lettuce, kale, carrots, beets, radishes, herbs]
+  - area_id: "GBO_AREA_FIELD_B"
+    name: "Field B - Summer Crops"
+    area_type: "outdoor_beds"
+    cropped_acres: 1.8
+    bed_count: 44
+    primary_crops: [tomatoes, peppers, cucumbers, summer_squash, basil, cut_flowers]
+  - area_id: "GBO_AREA_HIGHTUNNEL_1"
+    name: "High Tunnel 1"
+    area_type: "high_tunnel"
+    cropped_acres: 0.3
+    bed_count: 6
+    primary_crops: [tomatoes, basil, cucumbers]
+  - area_id: "GBO_AREA_HIGHTUNNEL_2"
+    name: "High Tunnel 2"
+    area_type: "high_tunnel"
+    cropped_acres: 0.2
+    bed_count: 5
+    primary_crops: [salad_mix, herbs, transplants]
+  - area_id: "GBO_AREA_BERRY_PATCH"
+    name: "Berry Patch"
+    area_type: "small_fruit"
+    cropped_acres: 0.5
+    primary_crops: [strawberries, raspberries]
+inventory:
+  - item_id: "GBO_INV_PINT_CLAMSHELLS"
+    item_type: "pint_clamshells"
+    product_name: "Pint Clamshells"
+    quantity: 160
+    unit: "units"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+  - item_id: "GBO_INV_QUART_CLAMSHELLS"
+    item_type: "quart_clamshells"
+    product_name: "Quart Clamshells"
+    quantity: 85
+    unit: "units"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+  - item_id: "GBO_INV_PAPER_BAGS"
+    item_type: "paper_bags"
+    product_name: "Paper Bags"
+    quantity: 420
+    unit: "units"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+  - item_id: "GBO_INV_CSA_BOXES"
+    item_type: "csa_boxes"
+    product_name: "CSA Boxes"
+    quantity: 110
+    unit: "units"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+  - item_id: "GBO_INV_LABELS"
+    item_type: "labels"
+    product_name: "Labels"
+    quantity: 260
+    unit: "units"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+quotes:
+  - quote_id: "GBO_QUOTE_CLAMSHELLS_2026_06_18"
+    supplier: "Local Pack Corp"
+    input_type: "packaging"
+    product_name: "Pint Clamshells"
+    price: 72.00
+    unit: "USD_per_case"
+    quantity: 500
+    delivery_fee: "18.00"
+    quote_date: "2026-06-18"
+    valid_until: "2026-06-30"
+  - quote_id: "GBO_QUOTE_CSA_BOXES_2026_06_18"
+    supplier: "Box Depot"
+    input_type: "packaging"
+    product_name: "CSA Boxes"
+    price: 1.15
+    unit: "USD_per_box"
+    quantity: 250
+    delivery_fee: "25.00"
+    quote_date: "2026-06-18"
+    valid_until: "2026-06-30"
+  - quote_id: "GBO_QUOTE_ORGANIC_FERT_2026_06_20"
+    supplier: "Hudson Valley Compost"
+    input_type: "organic_granular_fertilizer"
+    product_name: "Organic Granular Fertilizer"
+    price: 38.00
+    unit: "USD_per_50lb_bag"
+    quote_date: "2026-06-20"
+    valid_until: "2026-06-27"
+    organic_documentation_status: "uncertain"
+csa_members: 75
+csa_pickup_day: "Thursday"
+farmers_market_day: "Saturday"
+restaurant_availability_day: "Tuesday"
+receipt_paper_status: "low"
+tent_weights_status: "needs_check"
+organic_context:
+  organic_status: "certified_organic"
+  approved_input_list_status: "partial"
+  organic_documentation_complete: false

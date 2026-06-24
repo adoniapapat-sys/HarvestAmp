@@ -1,0 +1,25 @@
+# schemas/source_metadata.schema.yaml
+$schema: "http://json-schema.org/draft-07/schema#"
+title: SourceMetadata
+type: object
+required:
+  - source_id
+  - source_name
+  - trust_tier
+  - freshness_status
+  - privacy_class
+properties:
+  source_id:
+    type: string
+  source_name:
+    type: string
+  source_type:
+    type: string
+  trust_tier:
+    type: string
+  freshness_status:
+    type: string
+  privacy_class:
+    type: string
+  description:
+    type: string

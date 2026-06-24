@@ -1,0 +1,51 @@
+# schemas/farm_context_package.schema.yaml
+$schema: "http://json-schema.org/draft-07/schema#"
+title: FarmContextPackage
+type: object
+required:
+  - context_package_id
+  - farm_id
+  - profile_name
+  - farm_type
+  - user_role
+properties:
+  context_package_id:
+    type: string
+  farm_id:
+    type: string
+  profile_name:
+    type: string
+  farm_type:
+    type: string
+  sales_channels:
+    type: array
+    items:
+      type: string
+  organic_status:
+    type: string
+  user_role:
+    type: string
+  relevant_fields:
+    type: array
+    items:
+      type: object
+  relevant_inventory:
+    type: array
+    items:
+      type: object
+  relevant_quotes:
+    type: array
+    items:
+      type: object
+  evidence_ids:
+    type: array
+    items:
+      type: string
+  prohibited_disclosures:
+    type: array
+    items:
+      type: string
+  redactions_applied:
+    type: array
+    items:
+      type: string

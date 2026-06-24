@@ -1,0 +1,54 @@
+# schemas/data_observations.schema.yaml
+$schema: "http://json-schema.org/draft-07/schema#"
+title: DataObservations
+type: object
+required:
+  - weather
+  - benchmarks
+properties:
+  weather:
+    type: object
+    additionalProperties:
+      type: object
+      required:
+        - source_id
+        - timestamp
+        - trust_tier
+        - freshness_status
+        - privacy_class
+        - farm_id
+        - authorization_status
+        - evidence_id
+        - forecast
+      properties:
+        source_id: { type: string }
+        timestamp: { type: string }
+        trust_tier: { type: string }
+        freshness_status: { type: string }
+        privacy_class: { type: string }
+        farm_id: { type: [string, "null"] }
+        authorization_status: { type: string }
+        evidence_id: { type: string }
+  benchmarks:
+    type: object
+    additionalProperties:
+      type: object
+      required:
+        - source_id
+        - timestamp
+        - trust_tier
+        - freshness_status
+        - privacy_class
+        - farm_id
+        - authorization_status
+        - evidence_id
+        - value
+      properties:
+        source_id: { type: string }
+        timestamp: { type: string }
+        trust_tier: { type: string }
+        freshness_status: { type: string }
+        privacy_class: { type: string }
+        farm_id: { type: [string, "null"] }
+        authorization_status: { type: string }
+        evidence_id: { type: string }

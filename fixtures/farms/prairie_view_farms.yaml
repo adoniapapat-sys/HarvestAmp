@@ -1,0 +1,143 @@
+# fixtures/farms/prairie_view_farms.yaml
+farm_id: "PVF_ROW_CROP_001"
+farm_name: "Prairie View Farms"
+farm_type: "large_conventional_row_crop"
+location: "Central Illinois, United States"
+scale: "1850 crop acres"
+sales_model: "commodity grain through elevators, co-op contracts, and stored grain"
+users:
+  - user_id: "pvf_owner_001"
+    name: "Mason Reed"
+    role: "farm_owner"
+    permissions:
+      - view_all_farm_data
+      - approve_financial_actions
+      - approve_supplier_messages
+      - manage_users
+      - connect_data_sources
+      - export_reports
+  - user_id: "pvf_manager_001"
+    name: "Elena Carter"
+    role: "farm_manager"
+    permissions:
+      - view_operational_data
+      - view_supplier_quotes
+      - create_tasks
+      - approve_fieldwork_tasks
+      - draft_supplier_messages
+      - approve_purchases_under_threshold
+  - user_id: "pvf_employee_001"
+    name: "Field Crew User"
+    role: "field_employee"
+    permissions:
+      - view_assigned_tasks
+      - submit_field_notes
+      - update_task_status
+    restrictions:
+      - cannot_view_supplier_quotes
+      - cannot_view_margin_scenarios
+      - cannot_approve_purchases
+      - cannot_share_reports
+  - user_id: "pvf_advisor_001"
+    name: "External Agronomy Advisor"
+    role: "authorized_advisor"
+    permissions:
+      - view_selected_fields
+      - view_crop_notes
+      - comment_on_crop_risk
+    restrictions:
+      - cannot_view_fuel_quotes
+      - cannot_view_grain_marketing_plan
+      - cannot_view_full_margin_dashboard
+fields:
+  - field_id: "PVF_FIELD_NORTH80"
+    name: "North 80"
+    acres: 80
+    crop_2026: "soybeans"
+    planting_date: "2026-05-08"
+    drainage: "moderate"
+  - field_id: "PVF_FIELD_HOME320"
+    name: "Home 320"
+    acres: 320
+    crop_2026: "corn"
+    planting_date: "2026-04-24"
+    drainage: "good"
+  - field_id: "PVF_FIELD_RIVER220"
+    name: "River Bottom 220"
+    acres: 220
+    crop_2026: "corn"
+    planting_date: "2026-04-29"
+    drainage: "poor_to_moderate"
+  - field_id: "PVF_FIELD_WESTRIDGE460"
+    name: "West Ridge 460"
+    acres: 460
+    crop_2026: "soybeans"
+    planting_date: "2026-05-12"
+    drainage: "good"
+  - field_id: "PVF_FIELD_SOUTH600"
+    name: "South 600"
+    acres: 600
+    crop_2026: "corn"
+    planting_date: "2026-04-26"
+    drainage: "moderate"
+  - field_id: "PVF_FIELD_WHEAT170"
+    name: "Wheat 170"
+    acres: 170
+    crop_2026: "winter wheat"
+    planting_date: "2025-10-15"
+    drainage: "good"
+inventory:
+  - item_id: "PVF_INV_DIESEL"
+    item_type: "diesel"
+    product_name: "Off-Road Diesel"
+    quantity: 1350
+    unit: "gallons"
+    last_updated: "2026-06-21"
+    data_quality: "manual_sensor"
+    tank_capacity_gallons: 4000
+    expected_30_day_diesel_need_gallons: 3100
+    preferred_minimum_reserve_gallons: 700
+  - item_id: "PVF_INV_CORN_STORED"
+    item_type: "stored_grain_corn"
+    product_name: "Stored Corn"
+    quantity: 42000
+    unit: "bushels"
+    last_updated: "2026-06-21"
+  - item_id: "PVF_INV_SOY_STORED"
+    item_type: "stored_grain_soybeans"
+    product_name: "Stored Soybeans"
+    quantity: 9000
+    unit: "bushels"
+    last_updated: "2026-06-21"
+quotes:
+  - quote_id: "PVF_QUOTE_DIESEL_2026_06_21"
+    supplier: "River County Fuel"
+    input_type: "diesel"
+    product_name: "Off-Road Diesel"
+    price: 3.68
+    unit: "USD_per_gallon"
+    quantity: 2000
+    delivery_fee: "not_provided"
+    application_fee: "not_provided"
+    quote_date: "2026-06-21"
+    valid_until: "2026-06-25"
+  - quote_id: "PVF_QUOTE_UREA_2026_06_20"
+    supplier: "River County Co-op"
+    input_type: "fertilizer"
+    product_name: "Urea"
+    price: 475.00
+    unit: "USD_per_ton"
+    quote_date: "2026-06-20"
+    valid_until: "2026-06-30"
+    delivery_fee: "not_provided"
+    application_fee: "not_provided"
+  - quote_id: "PVF_QUOTE_UAN32_2026_06_20"
+    supplier: "River County Co-op"
+    input_type: "fertilizer"
+    product_name: "UAN 32"
+    price: 340.00
+    unit: "USD_per_ton"
+    quote_date: "2026-06-20"
+    valid_until: "2026-06-30"
+    delivery_fee: "not_provided"
+    application_fee: "not_provided"

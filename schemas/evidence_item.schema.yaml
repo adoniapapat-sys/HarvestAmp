@@ -1,0 +1,46 @@
+# schemas/evidence_item.schema.yaml
+$schema: "http://json-schema.org/draft-07/schema#"
+title: EvidenceItem
+type: object
+required:
+  - evidence_id
+  - source_id
+  - source_name
+  - trust_tier
+  - freshness_status
+  - privacy_class
+  - retrieved_at
+  - timestamp
+  - farm_id
+  - authorization_status
+properties:
+  evidence_id:
+    type: string
+  source_id:
+    type: string
+  source_name:
+    type: string
+  source_type:
+    type: string
+  trust_tier:
+    type: string
+  freshness_status:
+    type: string
+  privacy_class:
+    type: string
+  retrieved_at:
+    type: string
+  timestamp:
+    type: string
+  farm_id:
+    type: [string, "null"]
+  authorization_status:
+    type: string
+  valid_until:
+    type: string
+  data_payload:
+    type: object
+  confidence_score:
+    type: number
+  description:
+    type: string

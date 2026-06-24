@@ -1,0 +1,29 @@
+# schemas/connector_result.schema.yaml
+$schema: "http://json-schema.org/draft-07/schema#"
+title: ConnectorResult
+type: object
+required:
+  - result_id
+  - source_id
+  - retrieved_at
+  - freshness_status
+  - trust_tier
+  - privacy_class
+  - payload
+properties:
+  result_id:
+    type: string
+  source_id:
+    type: string
+  retrieved_at:
+    type: string
+  freshness_status:
+    type: string
+  trust_tier:
+    type: string
+  privacy_class:
+    type: string
+  payload:
+    type: object
+  evidence_reference:
+    type: string

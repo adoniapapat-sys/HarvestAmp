@@ -1,0 +1,45 @@
+# fixtures/data_observations.yaml
+weather:
+  PVF_ROW_CROP_001:
+    source_id: "DS-006"
+    timestamp: "2026-06-22T08:00:00-05:00"
+    trust_tier: "T1 Official / primary"
+    freshness_status: "fresh"
+    privacy_class: "Public"
+    farm_id: "PVF_ROW_CROP_001"
+    authorization_status: "authorized"
+    evidence_id: "res_weather_PVF_ROW_CROP_001"
+    forecast:
+      monday: { rain_probability: "low", wind: "6-12 mph", fieldwork_window: "good" }
+      tuesday: { rain_probability: "medium_evening", wind: "7-14 mph", fieldwork_window: "possible_morning" }
+      wednesday: { rain_probability: "high", wind: "12-20 mph", fieldwork_window: "limited" }
+      thursday: { rain_probability: "low", wind: "10-18 mph", fieldwork_window: "wind_caution" }
+      friday: { rain_probability: "low", wind: "5-10 mph", fieldwork_window: "good" }
+      saturday: { rain_probability: "medium", wind: "8-15 mph", fieldwork_window: "uncertain" }
+      sunday: { rain_probability: "low", wind: "6-12 mph", fieldwork_window: "good" }
+  GBO_DIRECT_001:
+    source_id: "DS-006"
+    timestamp: "2026-06-22T08:00:00-05:00"
+    trust_tier: "T1 Official / primary"
+    freshness_status: "fresh"
+    privacy_class: "Public"
+    farm_id: "GBO_DIRECT_001"
+    authorization_status: "authorized"
+    evidence_id: "res_weather_GBO_DIRECT_001"
+    forecast:
+      tuesday: "warm, scattered showers late"
+      wednesday: "humid"
+      thursday: "dry morning, storm chance evening"
+      friday: "hot, harvest heat caution"
+      saturday_market: "morning rain possible, wind 10-16 mph"
+benchmarks:
+  diesel_trend:
+    source_id: "DS-008"
+    timestamp: "2026-06-22T08:00:00-05:00"
+    trust_tier: "T1 Official / primary"
+    freshness_status: "fresh"
+    privacy_class: "Public"
+    farm_id: null
+    authorization_status: "authorized"
+    evidence_id: "res_benchmark_diesel"
+    value: "mock_regional_diesel_benchmark_flat_to_slightly_down"

@@ -1,0 +1,38 @@
+# schemas/quote.schema.yaml
+$schema: "http://json-schema.org/draft-07/schema#"
+title: Quote
+type: object
+required:
+  - quote_id
+  - supplier
+  - price
+  - unit
+  - quote_date
+  - valid_until
+properties:
+  quote_id:
+    type: string
+  supplier:
+    type: string
+  input_type:
+    type: string
+  product_name:
+    type: string
+  price:
+    type: number
+  unit:
+    type: string
+  quantity:
+    type: number
+  delivery_fee:
+    type: string
+  application_fee:
+    type: string
+  quote_date:
+    type: string
+  valid_until:
+    type: string
+  payment_terms:
+    type: string
+  source_document_id:
+    type: string

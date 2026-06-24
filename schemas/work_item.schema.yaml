@@ -1,0 +1,52 @@
+# schemas/work_item.schema.yaml
+$schema: "http://json-schema.org/draft-07/schema#"
+title: WorkItem
+type: object
+required:
+  - work_item_id
+  - workflow_id
+  - requesting_user_id
+  - farm_id
+  - agent_target
+  - trigger_type
+  - user_intent
+  - farm_context_package_id
+  - allowed_data_classes
+  - viewer_role
+properties:
+  work_item_id:
+    type: string
+  workflow_id:
+    type: string
+  requesting_user_id:
+    type: string
+  farm_id:
+    type: string
+  agent_target:
+    type: string
+  trigger_type:
+    type: string
+  user_intent:
+    type: string
+  requested_output:
+    type: string
+  farm_context_package_id:
+    type: string
+  allowed_data_classes:
+    type: array
+    items:
+      type: string
+  prohibited_data_classes:
+    type: array
+    items:
+      type: string
+  allowed_tool_names:
+    type: array
+    items:
+      type: string
+  viewer_role:
+    type: string
+  deadline:
+    type: string
+  human_review_policy_version:
+    type: string
