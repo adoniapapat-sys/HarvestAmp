@@ -87,6 +87,67 @@ class HumanReviewPolicy:
             })
             return hr
 
+        # Irrigation triggers
+        if topic == "irrigation_advisory":
+            if specialist_hr.get("review_type") == "expert_review" or "water_rights_or_allocation_sensitive" in hr["reason"]:
+                hr.update({
+                    "required": True,
+                    "review_type": "expert_review",
+                    "risk_tier": "tier_3",
+                    "status": "needs_expert_review",
+                    "reason": list(set(hr["reason"] + ["water_rights_or_allocation_sensitive"])),
+                    "recommended_reviewer": ["farm_owner"],
+                    "approval_required_before": []
+                })
+            else:
+                hr.update({
+                    "required": False,
+                    "review_type": "none",
+                    "risk_tier": "tier_0",
+                    "status": "review_not_required",
+                    "reason": [],
+                    "recommended_reviewer": [],
+                    "approval_required_before": []
+                })
+            return hr
+
+        if topic == "irrigation_request_records":
+            if confidence == "low" or len(missing_data) > 0:
+                hr.update({
+                    "required": False,
+                    "review_type": "none",
+                    "risk_tier": "tier_0",
+                    "status": "needs_info",
+                    "reason": ["low_confidence_due_to_missing_data"],
+                    "recommended_reviewer": [],
+                    "approval_required_before": []
+                })
+            else:
+                hr.update({
+                    "required": True,
+                    "review_type": "user_approval",
+                    "risk_tier": "tier_2",
+                    "status": "needs_user_approval",
+                    "reason": ["irrigation_water_request"],
+                    "recommended_reviewer": ["farm_owner", "farm_manager"],
+                    "approval_required_before": ["submit_irrigation_request"]
+                })
+            return hr
+
+        if topic == "irrigation_compliance":
+            if specialist_hr.get("review_type") == "expert_review" or "water_rights_or_allocation_sensitive" in hr["reason"]:
+                hr.update({
+                    "required": True,
+                    "review_type": "expert_review",
+                    "risk_tier": "tier_3",
+                    "status": "needs_expert_review",
+                    "reason": list(set(hr["reason"] + ["water_rights_or_allocation_sensitive"])),
+                    "recommended_reviewer": ["farm_owner"],
+                    "approval_required_before": ["submit_irrigation_request"]
+                })
+            return hr
+
+
         # Financial / Procurement triggers
         if topic in ["fuel_buy_window", "fertilizer_comparison", "packaging_reorder", "weekly_plan_pvf", "weekly_plan_gbo"]:
             if user_role in ["field_employee", "field_lead", "market_staff"]:

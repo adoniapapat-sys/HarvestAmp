@@ -4,7 +4,7 @@
 These agents mock language reasoning and return structured AgentFinding objects.
 They use math_utils to perform deterministic calculations where appropriate.
 """
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 from harvestamp.core.math_utils import (
     calculate_fertilizer_cost_per_pound_nitrogen,
     calculate_tank_capacity_percentage,
@@ -151,6 +151,15 @@ class WeatherAgent(BaseAgent):
                 work_item, "fieldwork_weather", summary, recommendation, "this_week", "medium", evidence_ids,
                 assumptions=["Fieldwork windows follow predicted weather timing."],
                 missing_data=["Real-time wind and rain sensor updates"]
+            )
+            
+        elif topic in ["irrigation_advisory", "irrigation_request"]:
+            summary = "Upcoming forecast indicates high temperatures, no rain, and high wind this week, leading to high crop evapotranspiration."
+            recommendation = "Upcoming hot and dry conditions will increase crop water demand. Suggest scheduling irrigation during available turns while monitoring wind speeds to minimize drift/evaporative loss. Do not make water-rights or district-rule determinations."
+            finding = self.create_finding(
+                work_item, "fieldwork_weather", summary, recommendation, "this_week", "high", evidence_ids,
+                assumptions=["High temperatures will persist throughout the week."],
+                missing_data=[]
             )
             
         else:
@@ -364,10 +373,18 @@ class RecordsAgent(BaseAgent):
     def __init__(self):
         super().__init__("Records + Inventory Agent")
 
-    def run(self, work_item: Dict[str, Any], context: Dict[str, Any], inventory: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def run(
+        self,
+        work_item: Dict[str, Any],
+        context: Dict[str, Any],
+        inventory: List[Dict[str, Any]],
+        irrigation_schedule: Optional[Dict[str, Any]] = None,
+        irrigation_request: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         topic = get_topic_with_fallback(work_item, context)
         user_role = context.get("user_role", "")
         evidence_ids = [inv["result_id"] for inv in inventory]
+
 
         if topic == "weekly_plan_pvf":
             if user_role == "field_employee":
@@ -424,6 +441,62 @@ class RecordsAgent(BaseAgent):
                 assumptions=["Approved input list requires certifier confirmation."],
                 missing_data=["OMRI certificates for new inputs", "certifier organic input approval record"]
             )
+
+        elif topic == "irrigation_advisory":
+            sched_payload = irrigation_schedule.get("payload", {}) if irrigation_schedule else {}
+            manual_sched = sched_payload.get("manual_schedule", "unknown")
+            soil_moist = sched_payload.get("soil_moisture", "unknown")
+            alloc = sched_payload.get("water_allocation_balance", "unknown")
+            demand = sched_payload.get("crop_water_demand_target", "unknown")
+            
+            is_field_b = "summer crops" in str(work_item.get("user_intent", "")).lower() or "field b" in str(work_item.get("user_intent", "")).lower()
+            
+            if is_field_b:
+                summary = "Irrigation schedule check for Summer Crops field (Field B): Water allocation balance is unknown, soil irrigation history is unknown, and requested volume is unknown."
+                recommendation = "Cannot recommend irrigation timing due to missing allocation and volume data. Please provide the current water allocation status, requested volume/flow, and soil/irrigation history."
+                evidence_ids = [irrigation_schedule.get("result_id")] if irrigation_schedule else []
+                return self.create_finding(
+                    work_item, "irrigation_request_records", summary, recommendation, "info", "low", evidence_ids,
+                    assumptions=[],
+                    missing_data=["water allocation", "requested volume", "flow rate limits", "soil history", "irrigation history"]
+                )
+            else:
+                summary = f"Manual schedule indicates district turn is available on Thursday: {manual_sched}. Soil moisture is {soil_moist}. Water allocation balance is {alloc}. Crop water demand target is {demand}."
+                recommendation = "Propose utilizing the Thursday district turn (08:00 - 20:00) to address declining soil moisture. Verify allocation status and crop water demand limits before starting."
+                evidence_ids = [irrigation_schedule.get("result_id")] if irrigation_schedule else []
+                return self.create_finding(
+                    work_item, "irrigation_advisory", summary, recommendation, "this_week", "high", evidence_ids,
+                    assumptions=["District turn will occur on schedule."],
+                    missing_data=["crop water demand", "water allocation balance", "flow rate limits", "district constraints"]
+                )
+
+        elif topic == "irrigation_request":
+            req_payload = irrigation_request.get("payload", {}) if irrigation_request else {}
+            provider = req_payload.get("provider_name", "River County Water District")
+            turnout = req_payload.get("turnout_id", "TURNOUT_GBO_A")
+            duration = req_payload.get("duration_hours", 12)
+            day = req_payload.get("day_of_week", "Tuesday")
+            
+            is_field_b = "summer crops" in str(work_item.get("user_intent", "")).lower() or "field b" in str(work_item.get("user_intent", "")).lower()
+            
+            if is_field_b:
+                summary = "Irrigation request check for Summer Crops field (Field B): Water allocation balance is unknown, soil irrigation history is unknown, and requested volume is unknown."
+                recommendation = "Cannot draft irrigation request. Please provide the missing water allocation, requested volume/flow, district constraints, field/crop stage, and soil/irrigation history."
+                evidence_ids = [irrigation_request.get("result_id")] if irrigation_request else []
+                return self.create_finding(
+                    work_item, "irrigation_request_records", summary, recommendation, "info", "low", evidence_ids,
+                    assumptions=[],
+                    missing_data=["water allocation", "requested volume", "flow rate limits", "soil history", "irrigation history"]
+                )
+            else:
+                summary = f"Drafted irrigation water request: {duration} hours for Field A next {day} via {provider} (turnout {turnout})."
+                recommendation = "Review and approve the drafted water request before any submission."
+                evidence_ids = [irrigation_request.get("result_id")] if irrigation_request else []
+                return self.create_finding(
+                    work_item, "irrigation_request_records", summary, recommendation, "this_week", "high", evidence_ids,
+                    assumptions=["Water district can accommodate the request."],
+                    missing_data=[]
+                )
 
         else:
             summary = f"Farm inventory records verified. Active categories: {[inv['payload']['item_type'] for inv in inventory]}"
@@ -602,6 +675,27 @@ class ComplianceAgent(BaseAgent):
             }
             return f
             
+        elif topic in ["irrigation_advisory", "irrigation_request"]:
+            if "rights" in work_item.get("user_intent", "").lower() or "allocation" in work_item.get("user_intent", "").lower():
+                summary = "Irrigation compliance: Water-rights allocation and district rules are sensitive and require verification."
+                recommendation = "Do not request water until water-rights allocation is verified. Check with district officials."
+                f = self.create_finding(
+                    work_item, "irrigation_compliance", summary, recommendation, "high", "medium", [],
+                    missing_data=["water allocation limits", "district rule certificate"]
+                )
+                f["human_review"] = {
+                    "required": True,
+                    "review_type": "expert_review",
+                    "risk_tier": "tier_3",
+                    "status": "needs_expert_review",
+                    "reason": ["water_rights_or_allocation_sensitive"]
+                }
+                return f
+            else:
+                summary = "Irrigation compliance: No conflict is surfaced in the mock/manual schedule data, but this is not a water-rights or district-rule determination. Verify provider rules and allocation status before acting."
+                recommendation = "Ensure compliance with district scheduling turns."
+                return self.create_finding(work_item, "irrigation_compliance", summary, recommendation, "info", "high", [])
+                
         return self.create_finding(work_item, "compliance_general", "Compliance check complete.", "Proceed with caution.", "info", "high", [])
 
 

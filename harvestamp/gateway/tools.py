@@ -217,3 +217,68 @@ class ToolGateway:
             "farm_id": benchmark.get("farm_id"),
             "authorization_status": benchmark.get("authorization_status", "authorized")
         }
+
+    def get_irrigation_schedule(
+        self,
+        capability_grant: Dict[str, Any],
+        requesting_farm_id: str,
+        target_farm_id: str,
+        observations: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Fetches irrigation schedule for a farm."""
+        if not check_cross_farm_block(requesting_farm_id, target_farm_id):
+            raise PermissionError("Cross-farm data access blocked.")
+            
+        if not self._verify_grant(capability_grant, "irrigation_tool"):
+            raise PermissionError("Unauthorized tool access capability.")
+
+        sched = observations.get("irrigation_schedules", {}).get(target_farm_id, {})
+        if not sched:
+            return {}
+
+        return {
+            "result_id": sched.get("evidence_id", f"res_irr_sched_{target_farm_id}"),
+            "source_id": sched.get("source_id", "DS-029"),
+            "retrieved_at": sched.get("timestamp", "2026-06-22T08:00:00-05:00"),
+            "freshness_status": sched.get("freshness_status", "fresh"),
+            "trust_tier": sched.get("trust_tier", "T3 User-entered"),
+            "privacy_class": sched.get("privacy_class", "Farm Restricted"),
+            "payload": sched.get("schedule", {}),
+            "evidence_reference": f"irrigation_schedule_{target_farm_id}",
+            "timestamp": sched.get("timestamp", "2026-06-22T08:00:00-05:00"),
+            "farm_id": target_farm_id,
+            "authorization_status": sched.get("authorization_status", "authorized")
+        }
+
+    def get_irrigation_request_context(
+        self,
+        capability_grant: Dict[str, Any],
+        requesting_farm_id: str,
+        target_farm_id: str,
+        observations: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Fetches irrigation request context for a farm."""
+        if not check_cross_farm_block(requesting_farm_id, target_farm_id):
+            raise PermissionError("Cross-farm data access blocked.")
+            
+        if not self._verify_grant(capability_grant, "irrigation_tool"):
+            raise PermissionError("Unauthorized tool access capability.")
+
+        req = observations.get("irrigation_requests", {}).get(target_farm_id, {})
+        if not req:
+            return {}
+
+        return {
+            "result_id": req.get("evidence_id", f"res_irr_req_{target_farm_id}"),
+            "source_id": req.get("source_id", "DS-029"),
+            "retrieved_at": req.get("timestamp", "2026-06-22T08:00:00-05:00"),
+            "freshness_status": req.get("freshness_status", "fresh"),
+            "trust_tier": req.get("trust_tier", "T1 Official / primary"),
+            "privacy_class": req.get("privacy_class", "Farm Restricted"),
+            "payload": req.get("request_context", {}),
+            "evidence_reference": f"irrigation_request_{target_farm_id}",
+            "timestamp": req.get("timestamp", "2026-06-22T08:00:00-05:00"),
+            "farm_id": target_farm_id,
+            "authorization_status": req.get("authorization_status", "authorized")
+        }
+

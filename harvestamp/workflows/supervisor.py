@@ -45,12 +45,21 @@ class Supervisor:
         prompt_l = prompt.lower()
         farm_type = farm_profile.get("farm_type", "")
         
+        # IRR-003: check credential exposure first
+        if "password" in prompt_l or "passwd" in prompt_l or "waterpass" in prompt_l or "secret_key" in prompt_l:
+            return "credential_exposure"
+            
         if "other farm" in prompt_l or "what other farms" in prompt_l or "cross-farm" in prompt_l:
             return "cross_farm_private_data"
         if "connect" in prompt_l and "api" in prompt_l:
             return "credential_connection"
         if "apply" in prompt_l and "restricted-use pesticide" in prompt_l:
             return "pesticide_rate_request"
+        if "irrigate" in prompt_l or "irrigation" in prompt_l or "water" in prompt_l or "allocation" in prompt_l or "rights" in prompt_l:
+            if "draft" in prompt_l or "submit" in prompt_l or "hours" in prompt_l:
+                return "irrigation_request"
+            else:
+                return "irrigation_advisory"
         if "diesel" in prompt_l or "fuel" in prompt_l:
             return "diesel_purchase_window"
         if "urea" in prompt_l or "uan 32" in prompt_l or "fertilizer" in prompt_l:
@@ -141,6 +150,68 @@ class Supervisor:
                 "proposed_actions": [],
                 "evidence_summary": [],
                 "warnings": ["You do not have permission to view supplier quotes or input pricing for other farms."],
+                "missing_data": [],
+                "human_review_status": overall_hr,
+                "status": "blocked"
+            }
+
+        if topic == "credential_exposure":
+            if self.audit_logger:
+                self.audit_logger.log_access(
+                    user_id=user_id,
+                    farm_id=requesting_farm_id,
+                    action="credential_exposure_detected",
+                    result="blocked_and_redacted"
+                )
+            overall_hr = {
+                "required": False,
+                "review_type": "blocked",
+                "risk_tier": "tier_4",
+                "status": "blocked",
+                "reason": ["credential_exposure"],
+                "recommended_reviewer": ["farm_owner"],
+                "approval_required_before": ["use_pasted_password"]
+            }
+            return {
+                "action_pack_id": f"ap_{requesting_farm_id}_cred_blocked",
+                "farm_id": requesting_farm_id,
+                "workflow_id": workflow_id,
+                "recommendations": [],
+                "proposed_actions": [],
+                "evidence_summary": [],
+                "warnings": [
+                    "Credentials must not be entered in chat. Please use the secure Credential Setup Assistant / Credential Broker to configure your connections safely."
+                ],
+                "missing_data": [],
+                "human_review_status": overall_hr,
+                "status": "blocked"
+            }
+
+        if topic == "irrigation_request" and user_role not in ["farm_owner", "farm_manager"]:
+            if self.audit_logger:
+                self.audit_logger.log_access(
+                    user_id=user_id,
+                    farm_id=requesting_farm_id,
+                    action="submit_irrigation_request_attempt",
+                    result="blocked_due_to_unauthorized_role"
+                )
+            overall_hr = {
+                "required": False,
+                "review_type": "blocked",
+                "risk_tier": "tier_4",
+                "status": "blocked",
+                "reason": ["unauthorized_role_attempt"],
+                "recommended_reviewer": ["farm_owner"],
+                "approval_required_before": ["submit_irrigation_request"]
+            }
+            return {
+                "action_pack_id": f"ap_{requesting_farm_id}_unauthorized_role",
+                "farm_id": requesting_farm_id,
+                "workflow_id": workflow_id,
+                "recommendations": [],
+                "proposed_actions": [],
+                "evidence_summary": [],
+                "warnings": ["You do not have permission to submit or draft water requests for this farm."],
                 "missing_data": [],
                 "human_review_status": overall_hr,
                 "status": "blocked"
@@ -263,7 +334,7 @@ class Supervisor:
         benchmark_data = {}
         
         # Query weather tool if needed
-        if topic in ["diesel_purchase_window", "weekly_plan_pvf", "weekly_plan_gbo", "farmers_market", "spray_window"]:
+        if topic in ["diesel_purchase_window", "weekly_plan_pvf", "weekly_plan_gbo", "farmers_market", "spray_window", "irrigation_advisory", "irrigation_request"]:
             grant = self.broker.request_capability_grant(farm_profile, user_id, "weather_tool")
             if grant["authorized"]:
                 res = self.gateway.get_weather(
@@ -288,6 +359,46 @@ class Supervisor:
                     authorization_status=res.get("authorization_status")
                 )
                 weather_data = res
+                
+        # Query irrigation tool if needed
+        irrigation_sched_data = {}
+        irrigation_req_data = {}
+        if topic in ["irrigation_advisory", "irrigation_request"]:
+            grant = self.broker.request_capability_grant(farm_profile, user_id, "irrigation_tool")
+            if grant["authorized"]:
+                res_sched = self.gateway.get_irrigation_schedule(grant, requesting_farm_id, target_farm_id, observations)
+                if res_sched:
+                    evidence_board.add_evidence(
+                        evidence_id=res_sched["result_id"],
+                        source_id=res_sched["source_id"],
+                        source_name="Mock / Manual Irrigation Schedule",
+                        trust_tier=res_sched["trust_tier"],
+                        freshness_status=res_sched["freshness_status"],
+                        privacy_class=res_sched["privacy_class"],
+                        data_payload=res_sched["payload"],
+                        description="Manual irrigation schedule",
+                        timestamp=res_sched.get("timestamp"),
+                        farm_id=res_sched.get("farm_id"),
+                        authorization_status=res_sched.get("authorization_status")
+                    )
+                    irrigation_sched_data = res_sched
+
+                res_req = self.gateway.get_irrigation_request_context(grant, requesting_farm_id, target_farm_id, observations)
+                if res_req:
+                    evidence_board.add_evidence(
+                        evidence_id=res_req["result_id"],
+                        source_id=res_req["source_id"],
+                        source_name="Mock Irrigation Request Context",
+                        trust_tier=res_req["trust_tier"],
+                        freshness_status=res_req["freshness_status"],
+                        privacy_class=res_req["privacy_class"],
+                        data_payload=res_req["payload"],
+                        description="Irrigation request context",
+                        timestamp=res_req.get("timestamp"),
+                        farm_id=res_req.get("farm_id"),
+                        authorization_status=res_req.get("authorization_status")
+                    )
+                    irrigation_req_data = res_req
                 
         # Query fuel_tool / fertilizer_tool if needed
         if topic in ["diesel_purchase_window", "fertilizer_comparison", "weekly_plan_pvf", "packaging_reorder", "organic_input_verification"]:
@@ -412,16 +523,18 @@ class Supervisor:
             findings.append(proc_finding)
 
         # Records Agent
-        if topic in ["weekly_plan_pvf", "weekly_plan_gbo", "packaging_reorder", "spray_window", "organic_input_verification"]:
+        if topic in ["weekly_plan_pvf", "weekly_plan_gbo", "packaging_reorder", "spray_window", "organic_input_verification", "irrigation_advisory", "irrigation_request"]:
             rec_finding = self.records_agent.run(
                 work_item={"work_item_id": f"wi_re_{user_id}", "workflow_id": workflow_id, "farm_id": target_farm_id, "requesting_user_id": user_id, "user_intent": prompt, "topic": topic},
                 context=context_pkg,
-                inventory=inv_data
+                inventory=inv_data,
+                irrigation_schedule=irrigation_sched_data,
+                irrigation_request=irrigation_req_data
             )
             findings.append(rec_finding)
             
         # Compliance Agent
-        if topic in ["spray_window", "organic_input_verification", "weekly_plan_pvf", "weekly_plan_gbo"]:
+        if topic in ["spray_window", "organic_input_verification", "weekly_plan_pvf", "weekly_plan_gbo", "irrigation_advisory", "irrigation_request"]:
             comp_finding = self.compliance_agent.run(
                 work_item={"work_item_id": f"wi_co_{user_id}", "workflow_id": workflow_id, "farm_id": target_farm_id, "requesting_user_id": user_id, "user_intent": prompt, "topic": topic},
                 context=context_pkg

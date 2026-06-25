@@ -18,6 +18,13 @@ HarvestAmp follows a documentation-first build approach. Major product and archi
 ## [Unreleased]
 
 ### Added
+- Implemented mock/manual irrigation scheduling and water-request workflows (IRR-001 through IRR-005) using local fixture data only.
+- Added YAML fixtures and schema definitions for `irrigation_schedules` and `irrigation_requests` under `fixtures/data_observations.yaml`, `fixtures/scenarios.yaml`, and `schemas/data_observations.schema.yaml`.
+- Implemented `get_irrigation_schedule` and `get_irrigation_request_context` under `ToolGateway` in `harvestamp/gateway/tools.py` with capability gates and farm isolation checks.
+- Integrated credentials exposure detection and unauthorized role blocks directly in `Supervisor.run_workflow` in `harvestamp/workflows/supervisor.py`, logging security audits without executing specialists.
+- Updated `WeatherAgent`, `RecordsAgent`, and `ComplianceAgent` in `harvestamp/agents/specialists.py` to support irrigation weather context, Thursday scheduling advisories, draft Tuesday request contexts, and water-rights expert review triggers.
+- Updated `HumanReviewPolicy` and `RecommendationSynthesizer` to draft proposed action `submit_irrigation_request` (with `needs_user_approval` and `blocked_until_approved`) and propagate `needs_info` statuses.
+- Added functional tests in `tests/test_irrigation.py` covering all scenario paths and gate policies.
 - Implemented the first read-only connector: National Weather Service (NWS) forecast API adapter in `harvestamp/connectors/nws_weather.py` supporting coordinate rounding to 4 decimal places, live network querying (behind environment variables and User-Agent safety checks), and default offline mock mode.
 - Integrated the NWS Weather Connector in `ToolGateway.get_weather` in shadow mode: logs connector results as shadow evidence to the Evidence Board, but returns mock weather observations for actual agent execution.
 - Added NWS failure fallback mapping: if NWS is stale, unavailable, or errors, falls back to mock fixture weather (if available) with `fallback_used=True` and `fallback_reason` metadata, and lowers WeatherAgent finding confidence to `"low"`.
