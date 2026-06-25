@@ -1582,3 +1582,27 @@ HarvestAmp will initially parse local files and synthetic fixtures only. Extract
 
 The first document extraction milestone improves farm-specific usefulness without introducing Drive, Gmail, supplier portals, OAuth, payment handling, or automatic record mutation.
 
+
+## D-038: Use Crop Health Watchlist as read-only shadow/watchlist context, not treatment advice
+
+Status: accepted
+Date: 2026-06-25
+Owner: Agronomic Product Compliance Lead
+Related docs: `04_DATA_SOURCES.md`, `05_AGENT_CONTRACTS.md`, `06_RISK_AND_HUMAN_REVIEW_POLICY.md`
+
+### Context
+
+To provide regional agronomic utility, HarvestAmp should incorporate public disease, pest, abiotic, and regulatory watchlists (such as Extension bulletins, IPM centers, and USDA APHIS PPQ/CAPS alerts). However, providing specific chemical treatment, active ingredient, pesticide product, application rate, or tank-mix recommendations introduces significant legal and environmental compliance risks.
+
+### Decision
+
+HarvestAmp will implement a read-only `CropHealthWatchlistConnector` in shadow/watchlist mode under the `crop_health_watchlist` capability. 
+1. Watchlist data serves strictly as public regional context and cannot override farm-specific scouting, crop, or organic certification records.
+2. Direct spray queries (e.g. "what should I spray?") will be redirected to scouting, official label review, and a certified crop advisor, actively refusing specific pesticide recommendations.
+3. For APHIS/regulatory-style alerts, the system will not diagnose the pest or suggest sample movement/shipment, advising only field documentation and contacting appropriate official plant health/regulatory channels.
+
+### Consequences
+
+HarvestAmp provides regional crop health awareness to farmers safely, without prescribing chemical treatments or violating regulatory quarantine reporting guidelines.
+
+

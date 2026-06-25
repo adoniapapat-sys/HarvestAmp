@@ -20,7 +20,11 @@ def get_topic_with_fallback(work_item: Dict[str, Any], context: Dict[str, Any], 
     intent = work_item.get("user_intent", "").lower()
     farm_type = context.get("farm_type", "")
     
-    if "spray" in intent:
+    if any(term in intent for term in [
+        "spray", "crop health", "scouting", "disease/pest watch", "disease watch", "pest watch",
+        "regulated/invasive pest awareness", "regulated pest", "invasive pest",
+        "spray/treatment safety-gate", "treatment safety-gate"
+    ]):
         return "spray_window"
     if "granular" in intent or "compost" in intent or "organic_input" in intent:
         return "organic_input_verification"
@@ -759,15 +763,16 @@ class ComplianceAgent(BaseAgent):
     def __init__(self):
         super().__init__("Compliance Agent")
 
-    def run(self, work_item: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    def run(self, work_item: Dict[str, Any], context: Dict[str, Any], crop_health_watchlist: Optional[Dict[str, Any]] = None) -> Any:
         topic = get_topic_with_fallback(work_item, context)
         user_role = context.get("user_role", "")
 
+        standard_finding = None
         if topic == "weekly_plan_pvf":
             if user_role == "field_employee":
                 summary = "Pesticide safety: Always read and follow pesticide labels before applying any crop-protection products."
                 recommendation = "Verify personal protective equipment (PPE) before fieldwork."
-                return self.create_finding(
+                standard_finding = self.create_finding(
                     work_item, "compliance_records", summary, recommendation, "info", "high", [],
                     prohibited_disclosures=["USDA_records", "agency_deadlines"]
                 )
@@ -786,13 +791,13 @@ class ComplianceAgent(BaseAgent):
                     "status": "needs_user_approval",
                     "reason": ["compliance_sensitive_if_usda_or_crop_insurance_deadline_interpreted"]
                 }
-                return f
+                standard_finding = f
 
         elif topic == "weekly_plan_gbo":
             if user_role in ["field_lead", "market_staff", "external_reviewer"]:
                 summary = "Organic operations safety: ensure wash-pack tools are sanitized."
                 recommendation = "Record sanitization log."
-                return self.create_finding(
+                standard_finding = self.create_finding(
                     work_item, "compliance_records", summary, recommendation, "info", "high", [],
                     prohibited_disclosures=["certification_records"]
                 )
@@ -811,7 +816,7 @@ class ComplianceAgent(BaseAgent):
                     "status": "needs_expert_review",
                     "reason": ["organic_certification_sensitive"]
                 }
-                return f
+                standard_finding = f
 
         elif topic == "organic_input_verification":
             summary = "Granular compost fertilizer OMRI verification is uncertain. Current documentation does not verify farm-specific certifier approval."
@@ -828,23 +833,26 @@ class ComplianceAgent(BaseAgent):
                 "status": "needs_expert_review",
                 "reason": ["organic_certification_sensitive", "input_approval_uncertain"]
             }
-            return f
+            standard_finding = f
             
         elif topic == "spray_window":
-            summary = "Applying a restricted-use chemical requires certification, exact label adherence, and a weather compliance log."
-            recommendation = "Block crew assignment until a licensed applicator verifies the spray plan and label application rates."
-            f = self.create_finding(
-                work_item, "spray_window", summary, recommendation, "high", "high", [],
-                missing_data=["Pesticide chemical label details"]
-            )
-            f["human_review"] = {
-                "required": True,
-                "review_type": "expert_review",
-                "risk_tier": "tier_3",
-                "status": "needs_expert_review",
-                "reason": ["pesticide_related", "label_or_restriction_sensitive"]
-            }
-            return f
+            intent = work_item.get("user_intent", "").lower()
+            is_product_rec = "what should i spray" in intent or "what to spray" in intent
+            if not is_product_rec:
+                summary = "Applying a restricted-use chemical requires certification, exact label adherence, and a weather compliance log."
+                recommendation = "Block crew assignment until a licensed applicator verifies the spray plan and label application rates."
+                f = self.create_finding(
+                    work_item, "spray_window", summary, recommendation, "high", "high", [],
+                    missing_data=["Pesticide chemical label details"]
+                )
+                f["human_review"] = {
+                    "required": True,
+                    "review_type": "expert_review",
+                    "risk_tier": "tier_3",
+                    "status": "needs_expert_review",
+                    "reason": ["pesticide_related", "label_or_restriction_sensitive"]
+                }
+                standard_finding = f
             
         elif topic in ["irrigation_advisory", "irrigation_request"]:
             if "rights" in work_item.get("user_intent", "").lower() or "allocation" in work_item.get("user_intent", "").lower():
@@ -861,13 +869,149 @@ class ComplianceAgent(BaseAgent):
                     "status": "needs_expert_review",
                     "reason": ["water_rights_or_allocation_sensitive"]
                 }
-                return f
+                standard_finding = f
             else:
                 summary = "Irrigation compliance: No conflict is surfaced in the mock/manual schedule data, but this is not a water-rights or district-rule determination. Verify provider rules and allocation status before acting."
                 recommendation = "Ensure compliance with district scheduling turns."
-                return self.create_finding(work_item, "irrigation_compliance", summary, recommendation, "info", "high", [])
+                standard_finding = self.create_finding(work_item, "irrigation_compliance", summary, recommendation, "info", "high", [])
+        elif topic != "crop_health_watchlist":
+            standard_finding = self.create_finding(work_item, "compliance_general", "Compliance check complete.", "Proceed with caution.", "info", "high", [])
+
+        # Process crop_health_watchlist
+        watchlist_findings = []
+        if crop_health_watchlist:
+            ev_ids = [crop_health_watchlist.get("result_id", "res_crop_health_unknown")]
+            status = crop_health_watchlist.get("status", "success")
+            fallback_used = crop_health_watchlist.get("fallback_used", False)
+
+            if status in ["unavailable", "error", "timeout", "denied"] or fallback_used:
+                # Watchlist is unavailable or fallback used
+                summary = "Crop health watchlist is currently unavailable."
+                if crop_health_watchlist.get("fallback_reason") == "live_mode_not_implemented":
+                    summary = "Regional crop health watchlist context is unavailable (live mode requested but not implemented)."
+                recommendation = "Verify current regional pest/disease alerts manually via Cooperative Extension or USDA official sites. Do not proceed with treatments without verification."
                 
-        return self.create_finding(work_item, "compliance_general", "Compliance check complete.", "Proceed with caution.", "info", "high", [])
+                wl_finding = self.create_finding(
+                    work_item=work_item,
+                    topic="crop_health_watchlist",
+                    summary=summary,
+                    recommendation=recommendation,
+                    urgency="info",
+                    confidence="low" if status == "unavailable" else "medium",
+                    evidence_ids=ev_ids,
+                    assumptions=["Manual extension check is required."],
+                    missing_data=["Regional crop health watchlist API data"]
+                )
+                wl_finding["recommendation_type"] = "crop_health_watchlist"
+                watchlist_findings.append(wl_finding)
+            else:
+                payload = crop_health_watchlist.get("payload", {})
+                watchlist_items = payload.get("watchlist", [])
+                
+                if not watchlist_items:
+                    summary = "Regional crop health watchlist: No active disease, pest, or regulated threats reported for the coming week."
+                    recommendation = "Continue standard scouting routines."
+                    wl_finding = self.create_finding(
+                        work_item=work_item,
+                        topic="crop_health_watchlist",
+                        summary=summary,
+                        recommendation=recommendation,
+                        urgency="info",
+                        confidence="high",
+                        evidence_ids=ev_ids
+                    )
+                    wl_finding["recommendation_type"] = "crop_health_watchlist"
+                    watchlist_findings.append(wl_finding)
+                else:
+                    aphis_alerts = []
+                    regular_alerts = []
+                    
+                    for item in watchlist_items:
+                        is_aphis = (
+                            item.get("issue_type") == "regulated_pest" or
+                            item.get("source_category") == "aphis_ppq_caps" or
+                            item.get("regulatory_relevance") in ["watch", "reportable_possible", "quarantine_relevant"]
+                        )
+                        if is_aphis:
+                            aphis_alerts.append(item)
+                        else:
+                            regular_alerts.append(item)
+                            
+                    if aphis_alerts:
+                        names = [item.get("issue_name") for item in aphis_alerts]
+                        summary = f"USDA APHIS / regulatory watchlist alert: {', '.join(names)} reported on the regional watchlist."
+                        recommendation = (
+                            "Document observations in the field. If suspected, contact appropriate official plant health or regulatory channels "
+                            "(such as state plant regulatory officials or local Extension) for official reporting. Do not move, transport, "
+                            "or ship suspected pest/disease samples."
+                        )
+                        
+                        aphis_finding = self.create_finding(
+                            work_item=work_item,
+                            topic="crop_health_watchlist",
+                            summary=summary,
+                            recommendation=recommendation,
+                            urgency="high",
+                            confidence="high",
+                            evidence_ids=ev_ids,
+                            assumptions=["Field crew follows quarantine and observation reporting guidelines."],
+                            missing_data=[]
+                        )
+                        aphis_finding["recommendation_type"] = "crop_health_watchlist"
+                        watchlist_findings.append(aphis_finding)
+                        
+                    if regular_alerts:
+                        names = [f"{item.get('crop')} {item.get('issue_name')} ({item.get('risk_level')} risk)" for item in regular_alerts]
+                        summary = f"Regional crop health watchlist: Active threats reported: {', '.join(names)}."
+                        
+                        is_organic = context.get("farm_type") == "small_organic_direct_market"
+                        is_spray_query = (topic == "spray_window") or ("spray" in work_item.get("user_intent", "").lower())
+                        
+                        if is_organic:
+                            if is_spray_query:
+                                recommendation = (
+                                    "This system cannot recommend specific chemical or spray applications. "
+                                    "We recommend conducting field scouting and obtaining diagnosis confirmation to confirm pest/disease presence. "
+                                    "Please consult certified organic guidelines, OMRI lists, local Extension guidance, and conduct a full label/legal review. "
+                                    "All treatment decisions must be reviewed with your organic certifier, a qualified crop advisor, or licensed applicator prior to any treatment."
+                                )
+                            else:
+                                recommendation = (
+                                    "Conduct field scouting and obtain diagnosis confirmation to verify pest/disease presence. "
+                                    "Consult certified organic guidelines and OMRI lists. "
+                                    "Verify with your organic certifier and consult a qualified crop advisor or licensed applicator prior to any treatment."
+                                )
+                        elif is_spray_query:
+                            recommendation = (
+                                "This system cannot recommend specific chemical/spray applications, pesticide products, rates of application, or tank mixes. "
+                                "We recommend conducting field scouting and obtaining diagnosis confirmation to confirm pest presence. "
+                                "Please consult local Extension guidance and conduct a full label/legal review. All treatment decisions "
+                                "must be reviewed with a qualified crop advisor or licensed applicator prior to any treatment."
+                            )
+                        else:
+                            recommendation = (
+                                "Conduct field scouting and obtain diagnosis confirmation to verify pest presence and check economic thresholds. "
+                                "Consult local Extension guidance and conduct a full label/legal review. "
+                                "Verify pesticide label details and application restrictions with a qualified crop advisor or licensed applicator prior to any treatment planning."
+                            )
+                                
+                        regular_finding = self.create_finding(
+                            work_item=work_item,
+                            topic="crop_health_watchlist",
+                            summary=summary,
+                            recommendation=recommendation,
+                            urgency="high" if is_spray_query else "medium",
+                            confidence="high",
+                            evidence_ids=ev_ids,
+                            assumptions=["Pest thresholds are assessed locally before treatment decision."],
+                            missing_data=["Field scouting report", "Certified crop advisor recommendation"]
+                        )
+                        regular_finding["recommendation_type"] = "crop_health_watchlist"
+                        watchlist_findings.append(regular_finding)
+
+        if watchlist_findings:
+            return [standard_finding] + watchlist_findings if standard_finding else watchlist_findings
+        return standard_finding
 
 
 class MarginAgent(BaseAgent):

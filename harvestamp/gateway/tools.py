@@ -749,6 +749,135 @@ class ToolGateway:
                 "connector_mode": ams_res["connector_mode"]
             }
 
+    def get_crop_health_watchlist(
+        self,
+        capability_grant: Dict[str, Any],
+        requesting_farm_id: str,
+        target_farm_id: str,
+        observations: Dict[str, Any],
+        farm_profile: Optional[Dict[str, Any]] = None,
+        evidence_board: Optional[Any] = None
+    ) -> Dict[str, Any]:
+        """Fetches crop health watchlist in shadow mode, invoking CropHealthWatchlistConnector."""
+        if not check_cross_farm_block(requesting_farm_id, target_farm_id):
+            raise PermissionError("Cross-farm data access blocked.")
+            
+        if not self._verify_grant(capability_grant, "crop_health_watchlist"):
+            raise PermissionError("Unauthorized tool access capability.")
+
+        from harvestamp.connectors.crop_health_watchlist import CropHealthWatchlistConnector
+        connector = CropHealthWatchlistConnector()
+        
+        ch_mock_status = observations.get("crop_health_mock_status")
+        ch_res = connector.fetch_watchlist(
+            farm_id=target_farm_id,
+            mock_status=ch_mock_status
+        )
+
+        # Record connector-derived evidence in EvidenceBoard if available
+        if evidence_board is not None:
+            evidence_board.add_evidence(
+                evidence_id=ch_res["result_id"],
+                source_id=ch_res["source_id"],
+                source_name=ch_res.get("source_name", "Crop Health Watchlist API"),
+                trust_tier=ch_res["trust_tier"],
+                freshness_status=ch_res["freshness_status"],
+                privacy_class=ch_res["privacy_class"],
+                data_payload=ch_res["payload"],
+                description=f"Shadow crop health watchlist status: {ch_res.get('status')}",
+                timestamp=ch_res.get("retrieved_at"),
+                farm_id=ch_res.get("farm_id"),
+                authorization_status=ch_res.get("authorization_status"),
+                connector_mode=ch_res.get("connector_mode")
+            )
+
+        # Retrieve local mock fixture payload
+        ch_data = observations.get("crop_health_watchlist", {}).get(target_farm_id, {})
+        
+        ch_status = ch_res.get("status", "success")
+        ch_failed = ch_status in ["stale", "unavailable", "error", "timeout", "denied"] or ch_res.get("fallback_used", False)
+        
+        if ch_failed:
+            fallback_used = True
+            fallback_reason = ch_res.get("fallback_reason") or ch_status
+            returned_status = ch_status
+            returned_freshness = ch_res.get("freshness_status", "unavailable")
+        else:
+            fallback_used = False
+            fallback_reason = None
+            returned_status = "success"
+            returned_freshness = "fresh"
+
+        if not ch_data:
+            payload = {}
+            returned_freshness = "unavailable"
+            if not ch_failed:
+                fallback_used = True
+                fallback_reason = "No mock crop health watchlist fixture available."
+        else:
+            payload = {"watchlist": ch_data.get("watchlist", [])}
+
+        # Record fallback as evidence if fallback is used and data is present
+        if fallback_used and evidence_board is not None and ch_data:
+            evidence_board.add_evidence(
+                evidence_id=ch_data.get("evidence_id", f"res_crop_health_{target_farm_id}"),
+                source_id=ch_data.get("source_id", "DS-016"),
+                source_name="Local Crop Health Fixture Fallback",
+                trust_tier=ch_data.get("trust_tier", "T1 Official / primary"),
+                freshness_status=returned_freshness,
+                privacy_class=ch_data.get("privacy_class", "Public"),
+                data_payload=payload,
+                description=f"Local crop health fixture fallback used due to connector status: {ch_status}",
+                timestamp=ch_data.get("timestamp", ch_res.get("retrieved_at")),
+                farm_id=target_farm_id,
+                authorization_status=ch_data.get("authorization_status", "authorized"),
+                connector_mode="fixture_fallback"
+            )
+
+        if fallback_used:
+            return {
+                "result_id": ch_data.get("evidence_id", f"res_crop_health_{target_farm_id}") if ch_data else f"res_crop_health_connector_{target_farm_id}",
+                "source_id": ch_data.get("source_id", "DS-016") if ch_data else "DS-016",
+                "source_name": "Local Crop Health Fixture Fallback",
+                "retrieved_at": ch_data.get("timestamp", ch_res.get("retrieved_at")) if ch_data else ch_res.get("retrieved_at"),
+                "freshness_status": returned_freshness,
+                "trust_tier": ch_data.get("trust_tier", "T1 Official / primary") if ch_data else "T1 Official / primary",
+                "privacy_class": ch_data.get("privacy_class", "Public") if ch_data else "Public",
+                "payload": payload,
+                "evidence_reference": f"crop_health_watchlist_{target_farm_id}",
+                "timestamp": ch_data.get("timestamp", ch_res.get("retrieved_at")) if ch_data else ch_res.get("retrieved_at"),
+                "farm_id": target_farm_id,
+                "authorization_status": ch_data.get("authorization_status", "authorized") if ch_data else "authorized",
+                
+                # Shadow mode metadata
+                "fallback_used": True,
+                "fallback_reason": fallback_reason,
+                "status": returned_status,
+                "connector_mode": "fixture_fallback"
+            }
+        else:
+            return {
+                "result_id": ch_res["result_id"],
+                "source_id": ch_res["source_id"],
+                "source_name": ch_res["source_name"],
+                "retrieved_at": ch_res["retrieved_at"],
+                "freshness_status": ch_res["freshness_status"],
+                "trust_tier": ch_res["trust_tier"],
+                "privacy_class": ch_res["privacy_class"],
+                "payload": payload,
+                "evidence_reference": ch_res["evidence_reference"],
+                "timestamp": ch_res["retrieved_at"],
+                "farm_id": target_farm_id,
+                "authorization_status": ch_res["authorization_status"],
+                
+                # Shadow mode metadata
+                "fallback_used": False,
+                "fallback_reason": None,
+                "status": "success",
+                "connector_mode": ch_res["connector_mode"]
+            }
+
+
 
 
 

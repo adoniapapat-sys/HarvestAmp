@@ -61,6 +61,8 @@ class RecommendationSynthesizer:
                 title = "Fuel Watch"
             elif rec_type == "fertilizer_quote_watch":
                 title = "Fertilizer / Input Quote Watch"
+            elif rec_type == "crop_health_watchlist":
+                title = "Crop Health Watchlist"
             elif title == "Weekly Plan Pvf":
                 title = "Fuel and Input Watch"
             elif title == "Weekly Plan Gbo":
@@ -190,7 +192,7 @@ class RecommendationSynthesizer:
                         proposed_actions.append(action)
                         rec["proposed_actions"].append(action)
 
-            elif finding_topic == "spray_window" and "pesticide" in str(f.get("summary", "")).lower():
+            elif finding_topic == "spray_window" and "pesticide" in str(f.get("summary", "")).lower() and "cannot recommend" not in str(f.get("summary", "")).lower() and "cannot recommend" not in str(f.get("recommendation", "")).lower():
                 # Blocked action
                 action = {
                     "action_id": f"act_spray_crew_{action_pack_id}",

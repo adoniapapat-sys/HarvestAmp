@@ -84,6 +84,8 @@ def main():
     # Handle stale count trigger simulation
     if scenario["scenario_id"] == "SYS-005":
         prompt_str = scenario["prompt"] + " (stale-trigger)"
+    elif scenario["scenario_id"] == "IPM-004":
+        observations["crop_health_mock_status"] = "unavailable"
 
     # Run supervisor coordination workflow
     action_pack = supervisor.run_workflow(
