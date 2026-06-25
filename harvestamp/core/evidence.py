@@ -25,7 +25,8 @@ class EvidenceBoard:
         retrieved_at: Optional[str] = None,
         timestamp: Optional[str] = None,
         farm_id: Optional[str] = None,
-        authorization_status: Optional[str] = None
+        authorization_status: Optional[str] = None,
+        connector_mode: Optional[str] = None
     ) -> Dict[str, Any]:
         """Creates and stores an EvidenceItem."""
         if not retrieved_at:
@@ -47,6 +48,9 @@ class EvidenceBoard:
             "data_payload": data_payload,
             "description": description
         }
+        if connector_mode:
+            evidence_item["connector_mode"] = connector_mode
+            
         self.evidence_store[evidence_id] = evidence_item
         return evidence_item
         
