@@ -345,7 +345,10 @@ class RecommendationSynthesizer:
             "privacy_class": ev.get("privacy_class"),
             "timestamp": ev.get("timestamp"),
             "farm_id": ev.get("farm_id"),
-            "authorization_status": ev.get("authorization_status")
+            "authorization_status": ev.get("authorization_status"),
+            "connector_mode": ev.get("connector_mode"),
+            "fallback_used": ev.get("fallback_used"),
+            "fallback_reason": ev.get("fallback_reason")
         } for ev in evidence_list]
 
         return {

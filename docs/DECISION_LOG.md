@@ -129,6 +129,7 @@ Any future work, validations, or open questions.
 | D-032 | Recognize irrigation scheduling and water-request workflows as a HarvestAmp domain | accepted |
 | D-033 | Establish MCP Connector Architecture | accepted |
 | D-034 | Implement National Weather Service read-only connector in shadow mode | accepted |
+| D-035 | Implement EIA Fuel Benchmark Connector in Shadow Mode | accepted |
 
 ---
 
@@ -1258,6 +1259,36 @@ Enables live network testing without breaking offline test determinism or alteri
 
 - NWSWeatherConnector returns normalized `ConnectorResult`.
 - If NWS connector fails (unavailable/stale/error/timeout/denied), the system falls back to mock fixture weather (if available) but sets `fallback_used = True` and lowers the WeatherAgent's confidence to `"low"`.
+
+## D-035: Implement EIA Fuel Benchmark Connector in Shadow Mode
+
+Status: accepted  
+Date: 2026-06-24  
+Owner: Architecture owner / security owner  
+Related docs: `04_DATA_SOURCES.md`, `05_AGENT_CONTRACTS.md`, `08_EVALUATION_TESTS.md`, `10_BUILD_PLAN.md`
+
+### Context
+
+We need to implement a read-only fuel benchmark connector to support the Prairie View fuel buy-window workflow (`PVF-002`). EIA benchmark data must be treated as public benchmark context, not as the farmer's actual delivered supplier quote.
+
+### Decision
+
+Implement the EIA Fuel Benchmark Connector in shadow mode. The connector selects region-specific series IDs based on farm profile locations without exposing coordinates/locations, supporting both offline mock mode and live mode (env-flagged with `HARVESTAMP_EIA_SHADOW_LIVE` and `HARVESTAMP_EIA_API_KEY`).
+
+The following mode and fallback rules apply:
+- **Offline Mock Mode (Live Disabled)**: When `HARVESTAMP_EIA_SHADOW_LIVE` is not set to `1`, the connector runs in `offline_mock` mode. It returns simulated EIA benchmark data directly with `fallback_used = False`.
+- **Fixture Fallback Mode (Live/Connector Failure)**: When live mode is enabled but the EIA API request fails (e.g., due to timeout, invalid API key, or unavailable service), the system falls back to the local benchmark fixture, recording the event with `fallback_used = True` and a populated `fallback_reason`. In both cases, shadow EIA results are logged as evidence on the `EvidenceBoard` with their actual status.
+
+### Rationale
+
+Treating EIA data as public benchmark context rather than the delivered quote prevents overriding farm-specific commercial agreements (supplier quotes). Fallback mechanics ensure the system remains robust during API failures, keeping the farmer's quote as the decision anchor. Mode-based labeling clarifies whether a result represents an offline simulation or a live integration fallback.
+
+### Consequences
+
+- `EIAFuelBenchmarkConnector` returns normalized `ConnectorResult` including `SourceMetadata`.
+- `ToolGateway` mediates all EIA connector access.
+- ProcurementAgent uses benchmark context in `PVF-002` without replacing the supplier quote as the decision anchor.
+- If EIA fails, overall recommendation confidence is not downgraded from "high" to "medium" if farm-specific details are current.
 
 ---
 

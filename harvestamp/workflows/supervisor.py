@@ -357,7 +357,9 @@ class Supervisor:
                     timestamp=res.get("timestamp"),
                     farm_id=res.get("farm_id"),
                     authorization_status=res.get("authorization_status"),
-                    connector_mode=res.get("connector_mode")
+                    connector_mode=res.get("connector_mode"),
+                    fallback_used=res.get("fallback_used"),
+                    fallback_reason=res.get("fallback_reason")
                 )
                 weather_data = res
                 
@@ -435,14 +437,21 @@ class Supervisor:
                     quotes_data.append(q)
                     
             # Get Benchmark if diesel
-            if "diesel" in topic or "fuel" in topic:
+            if "diesel" in topic or "fuel" in topic or "weekly_plan_pvf" in topic:
                 grant_bench = self.broker.request_capability_grant(farm_profile, user_id, "fuel_tool")
                 if grant_bench["authorized"]:
-                    res_bench = self.gateway.get_benchmark(grant_bench, observations)
+                    res_bench = self.gateway.get_benchmark(
+                        grant_bench,
+                        requesting_farm_id,
+                        target_farm_id,
+                        observations,
+                        farm_profile=farm_profile,
+                        evidence_board=evidence_board
+                    )
                     evidence_board.add_evidence(
                         evidence_id=res_bench["result_id"],
                         source_id=res_bench["source_id"],
-                        source_name="EIA Fuel Benchmark API",
+                        source_name=res_bench.get("source_name", "EIA Fuel Benchmark API"),
                         trust_tier=res_bench["trust_tier"],
                         freshness_status=res_bench["freshness_status"],
                         privacy_class=res_bench["privacy_class"],
@@ -450,7 +459,10 @@ class Supervisor:
                         description="Regional energy index",
                         timestamp=res_bench.get("timestamp"),
                         farm_id=res_bench.get("farm_id"),
-                        authorization_status=res_bench.get("authorization_status")
+                        authorization_status=res_bench.get("authorization_status"),
+                        connector_mode=res_bench.get("connector_mode"),
+                        fallback_used=res_bench.get("fallback_used"),
+                        fallback_reason=res_bench.get("fallback_reason")
                     )
                     benchmark_data = res_bench
  
@@ -519,7 +531,8 @@ class Supervisor:
                 work_item={"work_item_id": f"wi_pr_{user_id}", "workflow_id": workflow_id, "farm_id": target_farm_id, "requesting_user_id": user_id, "user_intent": prompt, "topic": topic},
                 context=context_pkg,
                 quotes=quotes_data,
-                inventory=inv_data
+                inventory=inv_data,
+                benchmark=benchmark_data
             )
             findings.append(proc_finding)
 

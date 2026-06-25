@@ -127,26 +127,48 @@ class ToolGateway:
                 connector_mode="fixture_fallback"
             )
 
-        return {
-            "result_id": weather_data.get("evidence_id", f"res_weather_{target_farm_id}") if weather_data else f"res_weather_nws_{target_farm_id}",
-            "source_id": weather_data.get("source_id", "DS-006") if weather_data else "DS-006",
-            "source_name": "Local Weather Fixture Fallback" if fallback_used else nws_res["source_name"],
-            "retrieved_at": weather_data.get("timestamp", nws_res.get("retrieved_at")) if weather_data else nws_res.get("retrieved_at"),
-            "freshness_status": returned_freshness,
-            "trust_tier": weather_data.get("trust_tier", "T1 Official / primary") if weather_data else "T1 Official / primary",
-            "privacy_class": weather_data.get("privacy_class", "Public") if weather_data else "Public",
-            "payload": payload,
-            "evidence_reference": f"weather_forecast_{target_farm_id}",
-            "timestamp": weather_data.get("timestamp", nws_res.get("retrieved_at")) if weather_data else nws_res.get("retrieved_at"),
-            "farm_id": target_farm_id,
-            "authorization_status": weather_data.get("authorization_status", "authorized") if weather_data else "authorized",
-            
-            # Shadow mode metadata
-            "fallback_used": fallback_used,
-            "fallback_reason": fallback_reason,
-            "status": returned_status,
-            "connector_mode": "fixture_fallback" if fallback_used else nws_res["connector_mode"]
-        }
+        if fallback_used:
+            return {
+                "result_id": weather_data.get("evidence_id", f"res_weather_{target_farm_id}") if weather_data else f"res_weather_nws_{target_farm_id}",
+                "source_id": weather_data.get("source_id", "DS-006") if weather_data else "DS-006",
+                "source_name": "Local Weather Fixture Fallback",
+                "retrieved_at": weather_data.get("timestamp", nws_res.get("retrieved_at")) if weather_data else nws_res.get("retrieved_at"),
+                "freshness_status": returned_freshness,
+                "trust_tier": weather_data.get("trust_tier", "T1 Official / primary") if weather_data else "T1 Official / primary",
+                "privacy_class": weather_data.get("privacy_class", "Public") if weather_data else "Public",
+                "payload": payload,
+                "evidence_reference": f"weather_forecast_{target_farm_id}",
+                "timestamp": weather_data.get("timestamp", nws_res.get("retrieved_at")) if weather_data else nws_res.get("retrieved_at"),
+                "farm_id": target_farm_id,
+                "authorization_status": weather_data.get("authorization_status", "authorized") if weather_data else "authorized",
+                
+                # Shadow mode metadata
+                "fallback_used": True,
+                "fallback_reason": fallback_reason,
+                "status": returned_status,
+                "connector_mode": "fixture_fallback"
+            }
+        else:
+            return {
+                "result_id": nws_res["result_id"],
+                "source_id": nws_res["source_id"],
+                "source_name": nws_res["source_name"],
+                "retrieved_at": nws_res["retrieved_at"],
+                "freshness_status": nws_res["freshness_status"],
+                "trust_tier": nws_res["trust_tier"],
+                "privacy_class": nws_res["privacy_class"],
+                "payload": payload,
+                "evidence_reference": nws_res["evidence_reference"],
+                "timestamp": nws_res["retrieved_at"],
+                "farm_id": target_farm_id,
+                "authorization_status": nws_res["authorization_status"],
+                
+                # Shadow mode metadata
+                "fallback_used": False,
+                "fallback_reason": None,
+                "status": "success",
+                "connector_mode": nws_res["connector_mode"]
+            }
 
     def get_quotes(
         self,
@@ -215,27 +237,145 @@ class ToolGateway:
     def get_benchmark(
         self,
         capability_grant: Dict[str, Any],
-        observations: Dict[str, Any]
+        requesting_farm_id: str,
+        target_farm_id: str,
+        observations: Dict[str, Any],
+        farm_profile: Optional[Dict[str, Any]] = None,
+        evidence_board: Optional[Any] = None
     ) -> Dict[str, Any]:
-        """Fetches energy benchmark trends."""
+        """Fetches energy benchmark trends in shadow mode, invoking EIA connector."""
+        if not check_cross_farm_block(requesting_farm_id, target_farm_id):
+            raise PermissionError("Cross-farm data access blocked.")
+            
         if not self._verify_grant(capability_grant, "fuel_tool"):
             raise PermissionError("Unauthorized tool access capability.")
 
+        # Resolve series ID (task-scoped, does not expose raw farm coordinates/locations to EIA)
+        series_id = "PET.EMD_EPD2D_PTE_NUS_DPG.W" # Default U.S. average
+        if target_farm_id == "PVF_ROW_CROP_001":
+            series_id = "PET.EMD_EPD2D_PTE_R20_DPG.W" # Midwest
+        elif target_farm_id == "GBO_DIRECT_001":
+            series_id = "PET.EMD_EPD2D_PTE_R10_DPG.W" # East Coast
+        elif farm_profile and farm_profile.get("location"):
+            loc = farm_profile["location"].lower()
+            if "illinois" in loc:
+                series_id = "PET.EMD_EPD2D_PTE_R20_DPG.W"
+            elif "new york" in loc or "hudson" in loc:
+                series_id = "PET.EMD_EPD2D_PTE_R10_DPG.W"
+
+        # Call EIA connector in shadow mode
+        from harvestamp.connectors.eia_fuel import EIAFuelBenchmarkConnector
+        connector = EIAFuelBenchmarkConnector()
+        
+        eia_mock_status = observations.get("eia_mock_status")
+        eia_res = connector.fetch_benchmark(
+            series_id=series_id,
+            farm_id=target_farm_id,
+            mock_status=eia_mock_status
+        )
+
+        # Record EIA-derived evidence in EvidenceBoard if available
+        if evidence_board is not None:
+            evidence_board.add_evidence(
+                evidence_id=eia_res["result_id"],
+                source_id=eia_res["source_id"],
+                source_name=eia_res.get("source_name", "EIA Fuel Benchmark API"),
+                trust_tier=eia_res["trust_tier"],
+                freshness_status=eia_res["freshness_status"],
+                privacy_class=eia_res["privacy_class"],
+                data_payload=eia_res["payload"],
+                description=f"Shadow EIA benchmark status: {eia_res.get('status')}",
+                timestamp=eia_res.get("retrieved_at"),
+                farm_id=eia_res.get("farm_id"),
+                authorization_status=eia_res.get("authorization_status"),
+                connector_mode=eia_res.get("connector_mode")
+            )
+
+        # Retrieve local mock benchmark fixture payload
         benchmark = observations.get("benchmarks", {}).get("diesel_trend", {})
         
-        return {
-            "result_id": benchmark.get("evidence_id", "res_benchmark_diesel"),
-            "source_id": benchmark.get("source_id", "DS-008"),
-            "retrieved_at": benchmark.get("timestamp", "2026-06-22T08:00:00-05:00"),
-            "freshness_status": benchmark.get("freshness_status", "fresh"),
-            "trust_tier": benchmark.get("trust_tier", "T1 Official / primary"),
-            "privacy_class": benchmark.get("privacy_class", "Public"),
-            "payload": {"trend": benchmark.get("value")},
-            "evidence_reference": "diesel_trend",
-            "timestamp": benchmark.get("timestamp", "2026-06-22T08:00:00-05:00"),
-            "farm_id": benchmark.get("farm_id"),
-            "authorization_status": benchmark.get("authorization_status", "authorized")
-        }
+        eia_status = eia_res.get("status", "success")
+        eia_failed = eia_status in ["stale", "unavailable", "error", "timeout", "denied"]
+        
+        if eia_failed:
+            fallback_used = True
+            fallback_reason = eia_status
+            returned_status = eia_status
+            returned_freshness = eia_res.get("freshness_status", "unavailable")
+        else:
+            fallback_used = False
+            fallback_reason = None
+            returned_status = "success"
+            returned_freshness = "fresh"
+
+        if not benchmark:
+            payload = {}
+            returned_freshness = "unavailable"
+            if not eia_failed:
+                fallback_used = True
+                fallback_reason = "unavailable"
+        else:
+            payload = {"trend": benchmark.get("value")}
+
+        # Record fallback benchmark as evidence if fallback is used and benchmark data is present
+        if fallback_used and evidence_board is not None and benchmark:
+            evidence_board.add_evidence(
+                evidence_id=benchmark.get("evidence_id", f"res_benchmark_{target_farm_id}"),
+                source_id=benchmark.get("source_id", "DS-008"),
+                source_name="Local Fuel Benchmark Fixture Fallback",
+                trust_tier=benchmark.get("trust_tier", "T1 Official / primary"),
+                freshness_status=returned_freshness,
+                privacy_class=benchmark.get("privacy_class", "Public"),
+                data_payload=payload,
+                description=f"Local benchmark fixture fallback used due to EIA status: {eia_status}",
+                timestamp=benchmark.get("timestamp", eia_res.get("retrieved_at")),
+                farm_id=target_farm_id,
+                authorization_status=benchmark.get("authorization_status", "authorized"),
+                connector_mode="fixture_fallback"
+            )
+
+        if fallback_used:
+            return {
+                "result_id": benchmark.get("evidence_id", f"res_benchmark_{target_farm_id}") if benchmark else f"res_benchmark_eia_{target_farm_id}",
+                "source_id": benchmark.get("source_id", "DS-008") if benchmark else "DS-008",
+                "source_name": "Local Fuel Benchmark Fixture Fallback",
+                "retrieved_at": benchmark.get("timestamp", eia_res.get("retrieved_at")) if benchmark else eia_res.get("retrieved_at"),
+                "freshness_status": returned_freshness,
+                "trust_tier": benchmark.get("trust_tier", "T1 Official / primary") if benchmark else "T1 Official / primary",
+                "privacy_class": benchmark.get("privacy_class", "Public") if benchmark else "Public",
+                "payload": payload,
+                "evidence_reference": f"diesel_trend_{target_farm_id}",
+                "timestamp": benchmark.get("timestamp", eia_res.get("retrieved_at")) if benchmark else eia_res.get("retrieved_at"),
+                "farm_id": target_farm_id,
+                "authorization_status": benchmark.get("authorization_status", "authorized") if benchmark else "authorized",
+                
+                # Shadow mode metadata
+                "fallback_used": True,
+                "fallback_reason": fallback_reason,
+                "status": returned_status,
+                "connector_mode": "fixture_fallback"
+            }
+        else:
+            return {
+                "result_id": eia_res["result_id"],
+                "source_id": eia_res["source_id"],
+                "source_name": eia_res["source_name"],
+                "retrieved_at": eia_res["retrieved_at"],
+                "freshness_status": eia_res["freshness_status"],
+                "trust_tier": eia_res["trust_tier"],
+                "privacy_class": eia_res["privacy_class"],
+                "payload": payload,
+                "evidence_reference": eia_res["evidence_reference"],
+                "timestamp": eia_res["retrieved_at"],
+                "farm_id": target_farm_id,
+                "authorization_status": eia_res["authorization_status"],
+                
+                # Shadow mode metadata
+                "fallback_used": False,
+                "fallback_reason": None,
+                "status": "success",
+                "connector_mode": eia_res["connector_mode"]
+            }
 
     def get_irrigation_schedule(
         self,

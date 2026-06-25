@@ -18,12 +18,20 @@ HarvestAmp follows a documentation-first build approach. Major product and archi
 ## [Unreleased]
 
 ### Changed
+- Cleaned up NWS and EIA shadow evidence labeling to prevent duplicate evidence items on the Evidence Board. If the connector succeeds, only the live or offline mock connector result is shown. If fallback is used, the fallback evidence is logged as `"Local Weather Fixture Fallback"` or `"Local Fuel Benchmark Fixture Fallback"`.
+- Appended decision anchor disclaimer to PVF-002 Fuel Buy Window summary and recommendation: `"The farm-specific supplier quote is the decision anchor; EIA is public benchmark context only."`
 - Hardened NWS shadow connector labeling: dynamically sets source names to `"National Weather Service API (live)"` or `"National Weather Service API (shadow/offline)"` depending on live environment configuration to maintain honest evidence representation.
 - Added `connector_mode` metadata tracking across NWS Weather Connector, Evidence Board, and Tool Gateway with values `"live"`, `"offline_mock"`, and `"fixture_fallback"`.
 - Improved NWS failure handling: preserves the failed NWS ConnectorResult as shadow evidence on the Evidence Board, and records the `"Local Weather Fixture Fallback"` data as a separate, distinct evidence item.
 - Ensured that `WeatherAgent` confidence is degraded to `"low"` and weather data is never hallucinated when NWS fails and fallback data is unavailable.
 
 ### Added
+- Implemented read-only EIA fuel benchmark connector adapter in `harvestamp/connectors/eia_fuel.py` in shadow mode, supporting region-specific series mapping, live mode (env-flagged with `HARVESTAMP_EIA_SHADOW_LIVE` and `HARVESTAMP_EIA_API_KEY`), and default offline mock mode.
+- Integrated the EIA Fuel Benchmark Connector in `ToolGateway.get_benchmark` with capability checks, target-farm resolution, and fallback to local mock benchmark data.
+- Added EIA failure fallback mapping: if EIA is stale, unavailable, error, timeout, or denied, the system falls back to the mock benchmark fixture (if available), sets `fallback_used=True` and `fallback_reason` (matching the specific status: `stale`, `unavailable`, `error`, `timeout`, `denied`), and logs both the failed shadow EIA result and the fallback result to the `EvidenceBoard`.
+- Updated `ProcurementAgent` in `harvestamp/agents/specialists.py` to handle the benchmark context in the `PVF-002` fuel buy-window recommendation workflow, labeling the EIA benchmark as public benchmark context, and ensuring overall recommendation confidence is not downgraded when farm-specific details are current.
+- Added decision log entry `D-035` in `docs/DECISION_LOG.md` establishing the EIA benchmark usage guidelines.
+- Added unit and scenario tests in `tests/test_eia_fuel_connector.py` covering mock success, failure statuses, gateway mediation, agent isolation, live mode simulation, and confidence preservation.
 - Implemented mock/manual irrigation scheduling and water-request workflows (IRR-001 through IRR-005) using local fixture data only.
 - Added YAML fixtures and schema definitions for `irrigation_schedules` and `irrigation_requests` under `fixtures/data_observations.yaml`, `fixtures/scenarios.yaml`, and `schemas/data_observations.schema.yaml`.
 - Implemented `get_irrigation_schedule` and `get_irrigation_request_context` under `ToolGateway` in `harvestamp/gateway/tools.py` with capability gates and farm isolation checks.

@@ -93,7 +93,9 @@ def main():
         source_name = ev.get("source_name") or ev.get("source_id") or "Unknown"
         freshness = ev.get("freshness_status") or "unknown"
         ev_id = ev.get("evidence_id") or "N/A"
-        print(f"- Source: {source_name} | Freshness: {freshness} | Evidence ID: {ev_id}")
+        mode_str = f" | Mode: {ev.get('connector_mode')}" if ev.get('connector_mode') else ""
+        reason_str = f" | Fallback reason: {ev.get('fallback_reason')}" if ev.get('fallback_reason') else ""
+        print(f"- Source: {source_name} | Freshness: {freshness} | Evidence ID: {ev_id}{mode_str}{reason_str}")
 
     print("\n--- AGGREGATE POLICY GATES ---")
     hr = action_pack["human_review_status"]

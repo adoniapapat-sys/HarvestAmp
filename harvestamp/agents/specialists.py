@@ -193,10 +193,46 @@ class ProcurementAgent(BaseAgent):
     def __init__(self):
         super().__init__("Input Procurement Agent")
 
-    def run(self, work_item: Dict[str, Any], context: Dict[str, Any], quotes: List[Dict[str, Any]], inventory: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def run(
+        self,
+        work_item: Dict[str, Any],
+        context: Dict[str, Any],
+        quotes: List[Dict[str, Any]],
+        inventory: List[Dict[str, Any]],
+        benchmark: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         topic = get_topic_with_fallback(work_item, context)
         user_role = context.get("user_role", "")
         evidence_ids = [q["result_id"] for q in quotes] + [inv["result_id"] for inv in inventory]
+
+        bench_text = ""
+        bench_failed_or_stale = False
+        if benchmark:
+            evidence_ids.append(benchmark["result_id"])
+            status = benchmark.get("status", "success")
+            freshness = benchmark.get("freshness_status", "fresh")
+            fallback_used = benchmark.get("fallback_used", False)
+            
+            if status in ["unavailable", "error", "timeout", "denied"] and not fallback_used:
+                bench_text = "Public benchmark context: EIA regional diesel price benchmark is unavailable."
+                bench_failed_or_stale = True
+            elif fallback_used:
+                trend = benchmark.get("payload", {}).get("trend")
+                if trend and trend != "unknown":
+                    trend_display = trend.replace("mock_regional_diesel_benchmark_", "").replace("_", " ")
+                    bench_text = f"Public benchmark context: EIA regional diesel price benchmark is {trend_display}."
+                else:
+                    bench_text = "Public benchmark context: EIA regional diesel price benchmark is unavailable."
+                bench_failed_or_stale = True
+            elif freshness == "stale":
+                trend = benchmark.get("payload", {}).get("trend", "unknown")
+                trend_display = trend.replace("mock_regional_diesel_benchmark_", "").replace("_", " ") if trend else "unknown"
+                bench_text = f"Public benchmark context: EIA regional diesel price benchmark is {trend_display} (Warning: EIA benchmark data is stale)."
+                bench_failed_or_stale = True
+            else:
+                trend = benchmark.get("payload", {}).get("trend", "unknown")
+                trend_display = trend.replace("mock_regional_diesel_benchmark_", "").replace("_", " ") if trend else "unknown"
+                bench_text = f"Public benchmark context: EIA regional diesel price benchmark is {trend_display}."
 
         if topic == "weekly_plan_pvf":
             if user_role == "field_employee":
@@ -207,13 +243,23 @@ class ProcurementAgent(BaseAgent):
                     prohibited_disclosures=["supplier_quotes", "input_prices"]
                 )
             else:
-                summary = "Diesel inventory is 1,350 gallons in a 4,000-gallon tank. Expected 30-day need is 3,100 gallons with a 700-gallon reserve, triggering a low fuel watch. Current diesel quote is valid until 2026-06-25. Urea quote at $475/ton and UAN 32 quote at $340/ton are available, but delivery and application fees are missing."
-                recommendation = "Prepare a fuel quote inquiry for approval. Compare fertilizer material costs and confirm delivery and application fees before ordering."
+                summary = "Diesel inventory is 1,350 gallons in a 4,000-gallon tank. Expected 30-day need is 3,100 gallons with a 700-gallon reserve, triggering a low fuel watch. Current diesel quote is valid until 2026-06-25."
+                if bench_text:
+                    summary += f" {bench_text} The farm-specific supplier quote is the decision anchor; EIA is public benchmark context only."
+                summary += " Urea quote at $475/ton and UAN 32 quote at $340/ton are available, but delivery and application fees are missing."
+                recommendation = "Prepare a fuel quote inquiry for approval. Compare fertilizer material costs and confirm delivery and application fees before ordering. The farm-specific supplier quote is the decision anchor; EIA is public benchmark context only."
+                
+                # Do not downgrade the whole fuel recommendation confidence if farm-specific details are current.
+                confidence_val = "medium"
+                
                 f = self.create_finding(
-                    work_item, "weekly_plan_pvf", summary, recommendation, "high", "medium", evidence_ids,
+                    work_item, "weekly_plan_pvf", summary, recommendation, "high", confidence_val, evidence_ids,
                     assumptions=["Fuel usage aligns with 30-day operational needs."],
                     missing_data=["fertilizer delivery fee", "fertilizer application fee"]
                 )
+                if bench_failed_or_stale:
+                    f["missing_data"].append("Fresh EIA diesel benchmark")
+                    
                 f["human_review"] = {
                     "required": True,
                     "review_type": "user_approval",
@@ -282,12 +328,23 @@ class ProcurementAgent(BaseAgent):
                 return f
             else:
                 summary = f"Diesel tank level is {current_g} gallons (tank capacity {capacity} gallons). Expected 30-day need is {expected_need} gallons with a {reserve}-gallon reserve, triggering low fuel levels. Quote price is ${quote_price}/gallon, valid until {valid_until}."
-                recommendation = "Consider a split-buy strategy or prepare a fuel quote inquiry for approval. Purchasing 2,000 gallons brings the tank level to 3,350 gallons (1,350 + 2,000 = 3,350 gallons), leaving 650 gallons headspace. Do not attempt to fill completely. Require user approval before supplier contact or placing an order."
+                if bench_text:
+                    summary += f" {bench_text}"
+                summary += " The farm-specific supplier quote is the decision anchor; EIA is public benchmark context only."
+                recommendation = "Consider a split-buy strategy or prepare a fuel quote inquiry for approval. Purchasing 2,000 gallons brings the tank level to 3,350 gallons (1,350 + 2,000 = 3,350 gallons), leaving 650 gallons headspace. Do not attempt to fill completely. Require user approval before supplier contact or placing an order. The farm-specific supplier quote is the decision anchor; EIA is public benchmark context only."
+                
+                # Do not downgrade the whole fuel recommendation confidence if farm-specific details are current.
+                confidence_val = "high"
+                
                 f = self.create_finding(
-                    work_item, "fuel_buy_window", summary, recommendation, "high", "high", evidence_ids,
+                    work_item, "fuel_buy_window", summary, recommendation, "high", confidence_val, evidence_ids,
                     assumptions=["Current tank reading is fresh and accurate."],
                     missing_data=[]
                 )
+                if bench_failed_or_stale:
+                    f["assumptions"].append("EIA diesel benchmark is stale or unavailable; using fallback if available.")
+                    f["missing_data"].append("Fresh EIA diesel benchmark")
+                    
                 f["human_review"] = {
                     "required": True,
                     "review_type": "user_approval",
