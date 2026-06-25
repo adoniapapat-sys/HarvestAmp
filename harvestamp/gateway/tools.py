@@ -80,7 +80,8 @@ class ToolGateway:
                 description=f"Shadow NWS weather forecast status: {nws_res.get('status')}",
                 timestamp=nws_res.get("retrieved_at"),
                 farm_id=nws_res.get("farm_id"),
-                authorization_status=nws_res.get("authorization_status")
+                authorization_status=nws_res.get("authorization_status"),
+                connector_mode=nws_res.get("connector_mode")
             )
 
         # Retrieve local mock weather fixture payload
@@ -109,10 +110,27 @@ class ToolGateway:
         else:
             payload = weather_data.get("forecast", {})
 
+        # Record fallback weather as evidence if fallback is used and weather data is present
+        if fallback_used and evidence_board is not None and weather_data:
+            evidence_board.add_evidence(
+                evidence_id=weather_data.get("evidence_id", f"res_weather_{target_farm_id}"),
+                source_id=weather_data.get("source_id", "DS-006"),
+                source_name="Local Weather Fixture Fallback",
+                trust_tier=weather_data.get("trust_tier", "T1 Official / primary"),
+                freshness_status=returned_freshness,
+                privacy_class=weather_data.get("privacy_class", "Public"),
+                data_payload=payload,
+                description=f"Local weather fixture fallback used due to NWS status: {nws_status}",
+                timestamp=weather_data.get("timestamp", nws_res.get("retrieved_at")),
+                farm_id=target_farm_id,
+                authorization_status=weather_data.get("authorization_status", "authorized"),
+                connector_mode="fixture_fallback"
+            )
+
         return {
             "result_id": weather_data.get("evidence_id", f"res_weather_{target_farm_id}") if weather_data else f"res_weather_nws_{target_farm_id}",
             "source_id": weather_data.get("source_id", "DS-006") if weather_data else "DS-006",
-            "source_name": "Local Weather Fixture Fallback" if fallback_used else "National Weather Service Forecast",
+            "source_name": "Local Weather Fixture Fallback" if fallback_used else nws_res["source_name"],
             "retrieved_at": weather_data.get("timestamp", nws_res.get("retrieved_at")) if weather_data else nws_res.get("retrieved_at"),
             "freshness_status": returned_freshness,
             "trust_tier": weather_data.get("trust_tier", "T1 Official / primary") if weather_data else "T1 Official / primary",
@@ -126,7 +144,8 @@ class ToolGateway:
             # Shadow mode metadata
             "fallback_used": fallback_used,
             "fallback_reason": fallback_reason,
-            "status": returned_status
+            "status": returned_status,
+            "connector_mode": "fixture_fallback" if fallback_used else nws_res["connector_mode"]
         }
 
     def get_quotes(

@@ -356,7 +356,8 @@ class Supervisor:
                     description="Local weather forecast window",
                     timestamp=res.get("timestamp"),
                     farm_id=res.get("farm_id"),
-                    authorization_status=res.get("authorization_status")
+                    authorization_status=res.get("authorization_status"),
+                    connector_mode=res.get("connector_mode")
                 )
                 weather_data = res
                 

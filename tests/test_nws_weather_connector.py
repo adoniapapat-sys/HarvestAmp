@@ -19,8 +19,9 @@ def test_nws_connector_mock_success():
     
     # 2. Output must contain all required SourceMetadata fields
     assert res["source_id"] == "DS-006"
-    assert res["source_name"] == "National Weather Service API"
+    assert res["source_name"] == "National Weather Service API (shadow/offline)"
     assert res["source_type"] == "api"
+    assert res["connector_mode"] == "offline_mock"
     assert res["trust_tier"] == "T1 Official / primary"
     assert res["freshness_status"] == "fresh"
     assert res["privacy_class"] == "Public"
@@ -74,14 +75,16 @@ def test_gateway_shadow_mediation_success():
     assert res["payload"] == {"monday": "sunny"}
     assert res["fallback_used"] is False
     assert res["status"] == "success"
-    assert res["source_name"] == "National Weather Service Forecast"
+    assert res["source_name"] == "National Weather Service API (shadow/offline)"
+    assert res["connector_mode"] == "offline_mock"
     
     # Evidence board contains the shadow NWS connector result
     evidence_items = evidence_board.list_evidence()
     assert len(evidence_items) == 1
     nws_ev = evidence_items[0]
     assert nws_ev["source_id"] == "DS-006"
-    assert nws_ev["source_name"] == "National Weather Service API"
+    assert nws_ev["source_name"] == "National Weather Service API (shadow/offline)"
+    assert nws_ev["connector_mode"] == "offline_mock"
 
 def test_gateway_shadow_mediation_failure():
     """Verify gateway behavior and EvidenceBoard logging when NWS connector fails."""
@@ -110,13 +113,19 @@ def test_gateway_shadow_mediation_failure():
     assert res["status"] == "unavailable"
     assert res["freshness_status"] == "unavailable"
     assert res["source_name"] == "Local Weather Fixture Fallback"
+    assert res["connector_mode"] == "fixture_fallback"
     
-    # Evidence board contains the failed shadow NWS connector result
+    # Evidence board contains the failed shadow NWS connector result and the fallback weather evidence
     evidence_items = evidence_board.list_evidence()
-    assert len(evidence_items) == 1
-    nws_ev = evidence_items[0]
+    assert len(evidence_items) == 2
+    
+    fallback_ev = next(ev for ev in evidence_items if ev["source_name"] == "Local Weather Fixture Fallback")
+    assert fallback_ev["connector_mode"] == "fixture_fallback"
+    
+    nws_ev = next(ev for ev in evidence_items if ev["source_name"] == "National Weather Service API (shadow/offline)")
     assert nws_ev["source_id"] == "DS-006"
     assert nws_ev["freshness_status"] == "unavailable"
+    assert nws_ev["connector_mode"] == "offline_mock"
     assert "status: unavailable" in nws_ev["description"]
 
 def test_weather_agent_fallback_lowers_confidence():
@@ -213,6 +222,8 @@ def test_live_mode_simulated(mock_urlopen):
         assert res["freshness_status"] == "fresh"
         assert res["payload"]["periods"][0]["name"] == "Monday"
         assert res["observed_at"] == "2026-06-24T12:00:00Z"
+        assert res["source_name"] == "National Weather Service API (live)"
+        assert res["connector_mode"] == "live"
 
 def test_live_mode_missing_user_agent():
     """Verify live request fails if User-Agent is missing from environment."""
@@ -227,6 +238,8 @@ def test_live_mode_missing_user_agent():
         assert res["freshness_status"] == "unavailable"
         assert res["payload"] == {}
         assert "User-Agent" in res["missing_fields"]
+        assert res["source_name"] == "National Weather Service API (live)"
+        assert res["connector_mode"] == "live"
 
 # Skips unless explicitly requested
 @pytest.mark.skipif(os.environ.get("HARVESTAMP_NWS_SHADOW_LIVE") != "1", reason="Requires live NWS mode and network")

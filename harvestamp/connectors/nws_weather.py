@@ -200,6 +200,11 @@ class NWSWeatherConnector:
             else:
                 freshness_status = "unavailable"
                 
+        # Determine connector mode and source name dynamically based on shadow live env var
+        live_mode = os.environ.get("HARVESTAMP_NWS_SHADOW_LIVE") == "1"
+        source_name = "National Weather Service API (live)" if live_mode else "National Weather Service API (shadow/offline)"
+        connector_mode = "live" if live_mode else "offline_mock"
+                
         return {
             "result_id": evidence_id,
             "source_id": "DS-006",
@@ -210,14 +215,15 @@ class NWSWeatherConnector:
             "payload": payload,
             "evidence_reference": f"nws_weather_shadow_{farm_id or 'unknown'}",
             "status": status,
-            "source_name": "National Weather Service API",
+            "source_name": source_name,
             "source_type": "api",
             "observed_at": observed_at or retrieved_at,
             "farm_id": farm_id,
             "authorization_status": "authorized" if status != "denied" else "denied",
             "evidence_id": evidence_id,
             "missing_fields": missing_fields or [],
-            "assumptions": assumptions or []
+            "assumptions": assumptions or [],
+            "connector_mode": connector_mode
         }
 
     def _get_mock_payload(self, farm_id: Optional[str]) -> Dict[str, Any]:
