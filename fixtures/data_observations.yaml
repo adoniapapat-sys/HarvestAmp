@@ -43,6 +43,24 @@ benchmarks:
     authorization_status: "authorized"
     evidence_id: "res_benchmark_diesel"
     value: "mock_regional_diesel_benchmark_flat_to_slightly_down"
+  nass_crop_benchmarks:
+    source_id: "DS-010"
+    timestamp: "2026-06-22T08:00:00-05:00"
+    trust_tier: "T1 Official / primary"
+    freshness_status: "fresh"
+    privacy_class: "Public"
+    farm_id: null
+    authorization_status: "authorized"
+    evidence_id: "res_benchmark_nass"
+    crops:
+      corn:
+        yield_county_bushels_per_acre: 195.0
+        yield_state_bushels_per_acre: 203.0
+        acreage_state_acres: 11200000
+      soybeans:
+        yield_county_bushels_per_acre: 61.0
+        yield_state_bushels_per_acre: 64.0
+        acreage_state_acres: 10800000
 irrigation_schedules:
   GBO_DIRECT_001:
     source_id: "DS-029"

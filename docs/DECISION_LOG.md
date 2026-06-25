@@ -130,6 +130,7 @@ Any future work, validations, or open questions.
 | D-033 | Establish MCP Connector Architecture | accepted |
 | D-034 | Implement National Weather Service read-only connector in shadow mode | accepted |
 | D-035 | Implement EIA Fuel Benchmark Connector in Shadow Mode | accepted |
+| D-036 | Use USDA NASS Quick Stats as official regional benchmark context, not farm-specific yield truth | accepted |
 
 ---
 
@@ -1289,6 +1290,38 @@ Treating EIA data as public benchmark context rather than the delivered quote pr
 - `ToolGateway` mediates all EIA connector access.
 - ProcurementAgent uses benchmark context in `PVF-002` without replacing the supplier quote as the decision anchor.
 - If EIA fails, overall recommendation confidence is not downgraded from "high" to "medium" if farm-specific details are current.
+
+## D-036: Use USDA NASS Quick Stats as official regional benchmark context, not farm-specific yield truth
+
+Status: accepted  
+Date: 2026-06-25  
+Owner: Architecture owner / security owner  
+Related docs: `04_DATA_SOURCES.md`, `05_AGENT_CONTRACTS.md`, `08_EVALUATION_TESTS.md`, `10_BUILD_PLAN.md`
+
+### Context
+
+We need to implement a read-only crop benchmark connector to support the Prairie View weekly planning workflow. Crop statistics must be treated as public regional benchmark context, and must not replace farm-specific records or make deterministic farm-level yield claims.
+
+### Decision
+
+Implement the USDA NASS Quick Stats Connector in shadow mode. The connector supports both offline mock mode and live mode (env-flagged with `HARVESTAMP_NASS_SHADOW_LIVE` and `HARVESTAMP_NASS_API_KEY`).
+
+The following mode and fallback rules apply:
+- **Offline Mock Mode (Live Disabled)**: When `HARVESTAMP_NASS_SHADOW_LIVE` is not set to `1`, the connector runs in `offline_mock` mode. It returns simulated NASS crop benchmark data directly with `fallback_used = False`.
+- **Fixture Fallback Mode (Live/Connector Failure)**: When live mode is enabled but the NASS API request fails (e.g., due to timeout, invalid API key, or unavailable service), the system falls back to the local `nass_crop_benchmarks` fixture, recording the event with `fallback_used = True` and a populated `fallback_reason`. In both cases, shadow NASS results are logged as evidence on the `EvidenceBoard` with their actual status.
+
+### Rationale
+
+Treating NASS data as public benchmark context rather than farm truth prevents overconfident crop yield predictions or overriding farm-specific plans. Fallback mechanics ensure the system remains robust during USDA API failures. Mode-based labeling clarifies whether a result represents an offline simulation or a live integration fallback.
+
+### Consequences
+
+- `NASSQuickStatsConnector` returns normalized `ConnectorResult` including `SourceMetadata` without exposing query credentials.
+- `ToolGateway` mediates all NASS connector access.
+- `MarginAgent` and `MarketAgent` present NASS as public regional benchmark context only and include a clear warning that NASS does not override farm-specific records.
+- If NASS fails or is stale, the crop benchmark context confidence is marked lower (`"low"`).
+
+---
 
 ---
 

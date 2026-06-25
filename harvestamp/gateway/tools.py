@@ -441,3 +441,179 @@ class ToolGateway:
             "authorization_status": req.get("authorization_status", "authorized")
         }
 
+    def get_crop_benchmark(
+        self,
+        capability_grant: Dict[str, Any],
+        requesting_farm_id: str,
+        target_farm_id: str,
+        observations: Dict[str, Any],
+        farm_profile: Optional[Dict[str, Any]] = None,
+        evidence_board: Optional[Any] = None
+    ) -> Dict[str, Any]:
+        """Fetches crop benchmark statistics in shadow mode, invoking NASS connector."""
+        if not check_cross_farm_block(requesting_farm_id, target_farm_id):
+            raise PermissionError("Cross-farm data access blocked.")
+            
+        if not self._verify_grant(capability_grant, "crop_benchmark"):
+            raise PermissionError("Unauthorized tool access capability.")
+
+        # Resolve location details in a task-scoped manner to prevent leaking unnecessary details
+        state_alpha = "IL"
+        county_name = "CHAMPAIGN"
+        if target_farm_id == "PVF_ROW_CROP_001":
+            state_alpha = "IL"
+            county_name = "CHAMPAIGN"
+        elif target_farm_id == "GBO_DIRECT_001":
+            state_alpha = "NY"
+            county_name = "DUTCHESS"
+        elif farm_profile and farm_profile.get("location"):
+            loc = farm_profile["location"].lower()
+            if "illinois" in loc:
+                state_alpha = "IL"
+                county_name = "CHAMPAIGN"
+            elif "new york" in loc or "hudson" in loc:
+                state_alpha = "NY"
+                county_name = "DUTCHESS"
+
+        # Call NASS connector in shadow mode
+        from harvestamp.connectors.nass_quickstats import NASSQuickStatsConnector
+        connector = NASSQuickStatsConnector()
+        
+        nass_mock_status = observations.get("nass_mock_status")
+        
+        # Query CORN and SOYBEANS yields, then merge their ConnectorResult records
+        nass_res_corn = connector.fetch_benchmark(
+            commodity="CORN",
+            statisticcat_desc="YIELD",
+            state_alpha=state_alpha,
+            county_name=county_name,
+            farm_id=target_farm_id,
+            mock_status=nass_mock_status
+        )
+        
+        nass_res_soy = connector.fetch_benchmark(
+            commodity="SOYBEANS",
+            statisticcat_desc="YIELD",
+            state_alpha=state_alpha,
+            county_name=county_name,
+            farm_id=target_farm_id,
+            mock_status=nass_mock_status
+        )
+        
+        # Merge the payloads and status
+        merged_crops = {}
+        if nass_res_corn.get("payload") and "crops" in nass_res_corn["payload"]:
+            merged_crops.update(nass_res_corn["payload"]["crops"])
+        if nass_res_soy.get("payload") and "crops" in nass_res_soy["payload"]:
+            merged_crops.update(nass_res_soy["payload"]["crops"])
+            
+        nass_res = dict(nass_res_corn)
+        nass_res["payload"] = {"crops": merged_crops}
+        
+        if nass_res_corn["status"] != "success" or nass_res_soy["status"] != "success":
+            nass_res["status"] = nass_res_corn["status"] if nass_res_corn["status"] != "success" else nass_res_soy["status"]
+            nass_res["freshness_status"] = "unavailable"
+            
+        # Retrieve local mock benchmark fixture payload
+        benchmark = observations.get("benchmarks", {}).get("nass_crop_benchmarks", {})
+        
+        nass_status = nass_res.get("status", "success")
+        nass_failed = nass_status in ["stale", "unavailable", "error", "timeout", "denied"]
+        
+        if nass_failed:
+            fallback_used = True
+            fallback_reason = nass_status
+            returned_status = nass_status
+            returned_freshness = nass_res.get("freshness_status", "unavailable")
+        else:
+            fallback_used = False
+            fallback_reason = None
+            returned_status = "success"
+            returned_freshness = "fresh"
+
+        if not benchmark:
+            payload = {}
+            returned_freshness = "unavailable"
+            if not nass_failed:
+                fallback_used = True
+                fallback_reason = "unavailable"
+        else:
+            payload = {"crops": benchmark.get("crops", {})}
+
+        # Record NASS-derived evidence in EvidenceBoard if available
+        if evidence_board is not None:
+            evidence_board.add_evidence(
+                evidence_id=nass_res["result_id"],
+                source_id=nass_res["source_id"],
+                source_name=nass_res.get("source_name", "USDA NASS Quick Stats API"),
+                trust_tier=nass_res["trust_tier"],
+                freshness_status=nass_res["freshness_status"],
+                privacy_class=nass_res["privacy_class"],
+                data_payload=nass_res["payload"],
+                description=f"Shadow NASS crop benchmarks status: {nass_res.get('status')}",
+                timestamp=nass_res.get("retrieved_at"),
+                farm_id=nass_res.get("farm_id"),
+                authorization_status=nass_res.get("authorization_status"),
+                connector_mode=nass_res.get("connector_mode")
+            )
+
+        # Record fallback benchmark as evidence if fallback is used and benchmark data is present
+        if fallback_used and evidence_board is not None and benchmark:
+            evidence_board.add_evidence(
+                evidence_id=benchmark.get("evidence_id", f"res_benchmark_nass_{target_farm_id}"),
+                source_id=benchmark.get("source_id", "DS-010"),
+                source_name="Local NASS Benchmark Fixture Fallback",
+                trust_tier=benchmark.get("trust_tier", "T1 Official / primary"),
+                freshness_status=returned_freshness,
+                privacy_class=benchmark.get("privacy_class", "Public"),
+                data_payload=payload,
+                description=f"Local NASS benchmark fixture fallback used due to NASS status: {nass_status}",
+                timestamp=benchmark.get("timestamp", nass_res.get("retrieved_at")),
+                farm_id=target_farm_id,
+                authorization_status=benchmark.get("authorization_status", "authorized"),
+                connector_mode="fixture_fallback"
+            )
+
+        if fallback_used:
+            return {
+                "result_id": benchmark.get("evidence_id", f"res_benchmark_nass_{target_farm_id}") if benchmark else f"res_benchmark_nass_{target_farm_id}",
+                "source_id": benchmark.get("source_id", "DS-010") if benchmark else "DS-010",
+                "source_name": "Local NASS Benchmark Fixture Fallback",
+                "retrieved_at": benchmark.get("timestamp", nass_res.get("retrieved_at")) if benchmark else nass_res.get("retrieved_at"),
+                "freshness_status": returned_freshness,
+                "trust_tier": benchmark.get("trust_tier", "T1 Official / primary") if benchmark else "T1 Official / primary",
+                "privacy_class": benchmark.get("privacy_class", "Public") if benchmark else "Public",
+                "payload": payload,
+                "evidence_reference": f"nass_crop_benchmarks_{target_farm_id}",
+                "timestamp": benchmark.get("timestamp", nass_res.get("retrieved_at")) if benchmark else nass_res.get("retrieved_at"),
+                "farm_id": target_farm_id,
+                "authorization_status": benchmark.get("authorization_status", "authorized") if benchmark else "authorized",
+                
+                # Shadow mode metadata
+                "fallback_used": True,
+                "fallback_reason": fallback_reason,
+                "status": returned_status,
+                "connector_mode": "fixture_fallback"
+            }
+        else:
+            return {
+                "result_id": nass_res["result_id"],
+                "source_id": nass_res["source_id"],
+                "source_name": nass_res["source_name"],
+                "retrieved_at": nass_res["retrieved_at"],
+                "freshness_status": nass_res["freshness_status"],
+                "trust_tier": nass_res["trust_tier"],
+                "privacy_class": nass_res["privacy_class"],
+                "payload": payload,
+                "evidence_reference": nass_res["evidence_reference"],
+                "timestamp": nass_res["retrieved_at"],
+                "farm_id": target_farm_id,
+                "authorization_status": nass_res["authorization_status"],
+                
+                # Shadow mode metadata
+                "fallback_used": False,
+                "fallback_reason": None,
+                "status": "success",
+                "connector_mode": nass_res["connector_mode"]
+            }
+

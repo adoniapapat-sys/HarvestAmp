@@ -39,14 +39,16 @@ def test_pvf_001_weekly_row_crop_action_plan():
     assert "planting prep" not in weather_rec["recommendation"].lower()
     
     # 2. Diesel watch, fertilizer quotes available but missing delivery/application fees
-    proc_rec = next(r for r in ap["recommendations"] if r["recommendation_type"] == "weekly_plan_pvf")
-    assert "1,350" in proc_rec["summary"]
-    assert "3,100" in proc_rec["summary"]
-    assert "low fuel watch" in proc_rec["summary"].lower() or "fuel watch" in proc_rec["summary"].lower()
-    assert "Urea" in proc_rec["summary"]
-    assert "UAN 32" in proc_rec["summary"]
-    assert "fertilizer delivery fee" in proc_rec["missing_data"]
-    assert "fertilizer application fee" in proc_rec["missing_data"]
+    fuel_rec = next(r for r in ap["recommendations"] if r["recommendation_type"] == "fuel_watch")
+    assert "1,350" in fuel_rec["summary"]
+    assert "3,100" in fuel_rec["summary"]
+    assert "low fuel watch" in fuel_rec["summary"].lower() or "fuel watch" in fuel_rec["summary"].lower()
+    
+    fert_rec = next(r for r in ap["recommendations"] if r["recommendation_type"] == "fertilizer_quote_watch")
+    assert "Urea" in fert_rec["summary"]
+    assert "UAN 32" in fert_rec["summary"]
+    assert "fertilizer delivery fee" in fert_rec["missing_data"]
+    assert "fertilizer application fee" in fert_rec["missing_data"]
     
     # 3. Fuel freshness, crop-protection gaps, stored grain records
     rec_rec = next(r for r in ap["recommendations"] if r["recommendation_type"] == "inventory_records")
@@ -139,9 +141,13 @@ def test_restricted_role_weekly_plans():
     assert any("Supplier quotes, input pricing, margin, and marketing details are hidden for your role." in w for w in ap_pvf["warnings"])
     
     # Verify quotes, margin, grain details are hidden/redacted
-    proc_rec = next(r for r in ap_pvf["recommendations"] if r["recommendation_type"] == "weekly_plan_pvf")
-    assert "hidden" in proc_rec["recommendation"].lower()
-    assert "supplier_quotes" in proc_rec["prohibited_disclosures"]
+    fuel_rec = next(r for r in ap_pvf["recommendations"] if r["recommendation_type"] == "fuel_watch")
+    assert "hidden" in fuel_rec["recommendation"].lower()
+    assert "supplier_quotes" in fuel_rec["prohibited_disclosures"]
+    
+    fert_rec = next(r for r in ap_pvf["recommendations"] if r["recommendation_type"] == "fertilizer_quote_watch")
+    assert "hidden" in fert_rec["summary"].lower()
+    assert "supplier_quotes" in fert_rec["prohibited_disclosures"]
     
     mkt_rec = next(r for r in ap_pvf["recommendations"] if r["recommendation_type"] == "weekly_plan_pvf" and r["title"] == "Commodity Markets" or "Market" in r["title"])
     assert "hidden" in mkt_rec["summary"].lower()

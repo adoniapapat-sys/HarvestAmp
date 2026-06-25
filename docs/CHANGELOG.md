@@ -18,6 +18,7 @@ HarvestAmp follows a documentation-first build approach. Major product and archi
 ## [Unreleased]
 
 ### Changed
+- Split Prairie View weekly procurement output into separate Fuel Watch and Fertilizer / Input Quote Watch sections, ensuring distinct decision cards are presented to the farmer and redacted operational views are shown to the field employee.
 - Cleaned up NWS and EIA shadow evidence labeling to prevent duplicate evidence items on the Evidence Board. If the connector succeeds, only the live or offline mock connector result is shown. If fallback is used, the fallback evidence is logged as `"Local Weather Fixture Fallback"` or `"Local Fuel Benchmark Fixture Fallback"`.
 - Appended decision anchor disclaimer to PVF-002 Fuel Buy Window summary and recommendation: `"The farm-specific supplier quote is the decision anchor; EIA is public benchmark context only."`
 - Hardened NWS shadow connector labeling: dynamically sets source names to `"National Weather Service API (live)"` or `"National Weather Service API (shadow/offline)"` depending on live environment configuration to maintain honest evidence representation.
@@ -26,6 +27,12 @@ HarvestAmp follows a documentation-first build approach. Major product and archi
 - Ensured that `WeatherAgent` confidence is degraded to `"low"` and weather data is never hallucinated when NWS fails and fallback data is unavailable.
 
 ### Added
+- Implemented read-only USDA NASS Quick Stats connector adapter in `harvestamp/connectors/nass_quickstats.py` in shadow mode, supporting live mode (env-flagged with `HARVESTAMP_NASS_SHADOW_LIVE` and `HARVESTAMP_NASS_API_KEY`) and default offline mock mode.
+- Integrated NASS crop benchmarks retrieval inside `ToolGateway.get_crop_benchmark` with capability checks, target-farm resolution, separate queries for CORN and SOYBEANS, merged payload consolidation, and fallback to local mock benchmark data.
+- Added NASS failure fallback mapping: if NASS is stale, unavailable, error, timeout, or denied, the system falls back to the mock crop benchmark fixture (if available), sets `fallback_used=True` and `fallback_reason` (matching the specific status), and logs both the failed shadow NASS result and the fallback result to the `EvidenceBoard`.
+- Updated `MarginAgent` in `harvestamp/agents/specialists.py` to handle the crop benchmark context in the `PVF-001` weekly action plan workflow, presenting the USDA NASS statistics as public regional crop yield/acreage benchmark context only, and stating that Prairie View's farm-specific records remain the decision anchor.
+- Added decision log entry `D-036` in `docs/DECISION_LOG.md` establishing the USDA NASS Quick Stats benchmark usage guidelines.
+- Added unit and scenario tests in `tests/test_nass_quickstats_connector.py` covering mock success, failure statuses, gateway mediation, agent isolation, live mode simulation, weekly plan integration, exclusion of NASS crop context from `PVF-002`, and API key/URL redaction verification.
 - Implemented read-only EIA fuel benchmark connector adapter in `harvestamp/connectors/eia_fuel.py` in shadow mode, supporting region-specific series mapping, live mode (env-flagged with `HARVESTAMP_EIA_SHADOW_LIVE` and `HARVESTAMP_EIA_API_KEY`), and default offline mock mode.
 - Integrated the EIA Fuel Benchmark Connector in `ToolGateway.get_benchmark` with capability checks, target-farm resolution, and fallback to local mock benchmark data.
 - Added EIA failure fallback mapping: if EIA is stale, unavailable, error, timeout, or denied, the system falls back to the mock benchmark fixture (if available), sets `fallback_used=True` and `fallback_reason` (matching the specific status: `stale`, `unavailable`, `error`, `timeout`, `denied`), and logs both the failed shadow EIA result and the fallback result to the `EvidenceBoard`.
