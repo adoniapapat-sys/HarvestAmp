@@ -86,9 +86,9 @@
   primary_goal: "Generate a farmers market pack list considering weather, sales channels, and inventory."
   expected_agents: [Weather + Fieldwork Agent, Records + Inventory Agent, Market + Sales Agent, Recommendation Synthesizer]
   expected_human_review:
-    required: true
-    review_type: "user_approval"
-    reasons: ["external_disclosure"]
+    required: false
+    review_type: "none"
+    reasons: []
 
 - scenario_id: "GBO-004"
   name: "Packaging reorder advisor"

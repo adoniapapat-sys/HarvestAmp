@@ -333,6 +333,7 @@ class Supervisor:
         inv_data = []
         benchmark_data = {}
         crop_benchmark_data = None
+        market_report_data = None
         
         # Query weather tool if needed
         if topic in ["diesel_purchase_window", "weekly_plan_pvf", "weekly_plan_gbo", "farmers_market", "spray_window", "irrigation_advisory", "irrigation_request"]:
@@ -497,6 +498,38 @@ class Supervisor:
                     )
                     crop_benchmark_data = res_crop
  
+        # Get Produce Market Report if GBO weekly plan or GBO farmers market
+        if topic in ["weekly_plan_gbo", "farmers_market"]:
+            grant_mkt = self.broker.request_capability_grant(farm_profile, user_id, "marketdata_tool")
+            if grant_mkt["authorized"]:
+                res_mkt = self.gateway.get_market_report(
+                    grant_mkt,
+                    requesting_farm_id,
+                    target_farm_id,
+                    observations,
+                    farm_profile=farm_profile,
+                    evidence_board=evidence_board
+                )
+                evidence_board.add_evidence(
+                    evidence_id=res_mkt["result_id"],
+                    source_id=res_mkt["source_id"],
+                    source_name=res_mkt.get("source_name", "USDA AMS MyMarketNews API"),
+                    trust_tier=res_mkt["trust_tier"],
+                    freshness_status=res_mkt["freshness_status"],
+                    privacy_class=res_mkt["privacy_class"],
+                    data_payload=res_mkt["payload"],
+                    description="Regional USDA AMS MyMarketNews produce benchmarks",
+                    timestamp=res_mkt.get("timestamp"),
+                    farm_id=res_mkt.get("farm_id"),
+                    authorization_status=res_mkt.get("authorization_status"),
+                    connector_mode=res_mkt.get("connector_mode"),
+                    fallback_used=res_mkt.get("fallback_used"),
+                    fallback_reason=res_mkt.get("fallback_reason")
+                )
+                market_report_data = res_mkt
+
+
+ 
         # Query records_tool if needed
         if topic in ["diesel_purchase_window", "weekly_plan_pvf", "weekly_plan_gbo", "packaging_reorder", "spray_window", "organic_input_verification"]:
             grant = self.broker.request_capability_grant(farm_profile, user_id, "records_tool")
@@ -597,7 +630,8 @@ class Supervisor:
             mkt_finding = self.market_agent.run(
                 work_item={"work_item_id": f"wi_ma_{user_id}", "workflow_id": workflow_id, "farm_id": target_farm_id, "requesting_user_id": user_id, "user_intent": prompt, "topic": topic},
                 context=context_pkg,
-                crop_benchmark=crop_benchmark_data
+                crop_benchmark=crop_benchmark_data,
+                market_report=market_report_data
             )
             findings.append(mkt_finding)
  

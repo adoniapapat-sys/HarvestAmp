@@ -1,0 +1,12 @@
+# configs/ams_report_mapping.yaml
+# Configuration-driven report mapping for USDA AMS MyMarketNews reports
+
+reports:
+  - slug_id: "2281"
+    slug_name: "boston_terminal_market"
+    report_title: "Boston Fruit and Vegetable Terminal Market"
+    market_type: "terminal_market"
+    region: "Northeast"
+    commodity_map:
+      tomatoes: "TOMATOES"
+      salad_mix: "SALAD MIX"

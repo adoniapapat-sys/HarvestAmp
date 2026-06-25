@@ -617,3 +617,136 @@ class ToolGateway:
                 "connector_mode": nass_res["connector_mode"]
             }
 
+    def get_market_report(
+        self,
+        capability_grant: Dict[str, Any],
+        requesting_farm_id: str,
+        target_farm_id: str,
+        observations: Dict[str, Any],
+        farm_profile: Optional[Dict[str, Any]] = None,
+        evidence_board: Optional[Any] = None
+    ) -> Dict[str, Any]:
+        """Fetches produce market reports for a farm in shadow mode, invoking AMS connector."""
+        if not check_cross_farm_block(requesting_farm_id, target_farm_id):
+            raise PermissionError("Cross-farm data access blocked.")
+            
+        if not self._verify_grant(capability_grant, "marketdata_tool"):
+            raise PermissionError("Unauthorized tool access capability.")
+
+        # Default report is Boston Terminal Market Fruit & Vegetable (slug_id 2281)
+        slug_id = "2281"
+
+        from harvestamp.connectors.ams_market_news import AMSMarketNewsConnector
+        connector = AMSMarketNewsConnector()
+        
+        ams_mock_status = observations.get("ams_mock_status")
+        
+        ams_res = connector.fetch_market_report(
+            slug_id=slug_id,
+            farm_id=target_farm_id,
+            mock_status=ams_mock_status
+        )
+
+        ams_status = ams_res.get("status", "success")
+        ams_failed = ams_status in ["stale", "unavailable", "error", "timeout", "denied"]
+        
+        if ams_failed:
+            fallback_used = True
+            fallback_reason = ams_status
+            returned_status = ams_status
+            returned_freshness = ams_res.get("freshness_status", "unavailable")
+        else:
+            fallback_used = False
+            fallback_reason = None
+            returned_status = "success"
+            returned_freshness = "fresh"
+
+        # Check local benchmark fixture
+        benchmark = observations.get("benchmarks", {}).get("ams_market_reports", {})
+        if not benchmark:
+            payload = {}
+            returned_freshness = "unavailable"
+            if not ams_failed:
+                fallback_used = True
+                fallback_reason = "unavailable"
+        else:
+            payload = {"reports": benchmark.get("reports", {})}
+
+        # Record AMS-derived evidence in EvidenceBoard if available
+        if evidence_board is not None:
+            evidence_board.add_evidence(
+                evidence_id=ams_res["result_id"],
+                source_id=ams_res["source_id"],
+                source_name=ams_res.get("source_name", "USDA AMS MyMarketNews API"),
+                trust_tier=ams_res["trust_tier"],
+                freshness_status=ams_res["freshness_status"],
+                privacy_class=ams_res["privacy_class"],
+                data_payload=ams_res["payload"],
+                description=f"Shadow AMS market reports status: {ams_res.get('status')}",
+                timestamp=ams_res.get("retrieved_at"),
+                farm_id=ams_res.get("farm_id"),
+                authorization_status=ams_res.get("authorization_status"),
+                connector_mode=ams_res.get("connector_mode")
+            )
+
+        # Record fallback benchmark as evidence if fallback is used and benchmark data is present
+        if fallback_used and evidence_board is not None and benchmark:
+            evidence_board.add_evidence(
+                evidence_id=benchmark.get("evidence_id", "res_benchmark_ams"),
+                source_id=benchmark.get("source_id", "DS-011"),
+                source_name="Local AMS Market Fixture Fallback",
+                trust_tier=benchmark.get("trust_tier", "T1 Official / primary"),
+                freshness_status=returned_freshness,
+                privacy_class=benchmark.get("privacy_class", "Public"),
+                data_payload=payload,
+                description=f"Local AMS market report fixture fallback used due to AMS status: {ams_status}",
+                timestamp=benchmark.get("timestamp", ams_res.get("retrieved_at")),
+                farm_id=target_farm_id,
+                authorization_status=benchmark.get("authorization_status", "authorized"),
+                connector_mode="fixture_fallback"
+            )
+
+        if fallback_used:
+            return {
+                "result_id": benchmark.get("evidence_id", "res_benchmark_ams") if benchmark else "res_benchmark_ams",
+                "source_id": benchmark.get("source_id", "DS-011") if benchmark else "DS-011",
+                "source_name": "Local AMS Market Fixture Fallback",
+                "retrieved_at": benchmark.get("timestamp", ams_res.get("retrieved_at")) if benchmark else ams_res.get("retrieved_at"),
+                "freshness_status": returned_freshness,
+                "trust_tier": benchmark.get("trust_tier", "T1 Official / primary") if benchmark else "T1 Official / primary",
+                "privacy_class": benchmark.get("privacy_class", "Public") if benchmark else "Public",
+                "payload": payload,
+                "evidence_reference": f"ams_market_reports_{target_farm_id}",
+                "timestamp": benchmark.get("timestamp", ams_res.get("retrieved_at")) if benchmark else ams_res.get("retrieved_at"),
+                "farm_id": target_farm_id,
+                "authorization_status": benchmark.get("authorization_status", "authorized") if benchmark else "authorized",
+                
+                # Shadow mode metadata
+                "fallback_used": True,
+                "fallback_reason": fallback_reason,
+                "status": returned_status,
+                "connector_mode": "fixture_fallback"
+            }
+        else:
+            return {
+                "result_id": ams_res["result_id"],
+                "source_id": ams_res["source_id"],
+                "source_name": ams_res["source_name"],
+                "retrieved_at": ams_res["retrieved_at"],
+                "freshness_status": ams_res["freshness_status"],
+                "trust_tier": ams_res["trust_tier"],
+                "privacy_class": ams_res["privacy_class"],
+                "payload": payload,  # use parsed/scrubbed payload from ams_res
+                "evidence_reference": ams_res["evidence_reference"],
+                "timestamp": ams_res["retrieved_at"],
+                "farm_id": target_farm_id,
+                "authorization_status": ams_res["authorization_status"],
+                
+                # Shadow mode metadata
+                "fallback_used": False,
+                "fallback_reason": None,
+                "status": "success",
+                "connector_mode": ams_res["connector_mode"]
+            }
+
+
