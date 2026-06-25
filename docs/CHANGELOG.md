@@ -18,6 +18,9 @@ HarvestAmp follows a documentation-first build approach. Major product and archi
 ## [Unreleased]
 
 ### Changed
+- Re-aligned the weekly plan runner (`scripts/run_weekly_plan.py`) to print the exact Grand Plan sections in order for Prairie View Farms and Green Basket Organics.
+- Refactored mock specialist agent boundaries by adding explicit wrappers: `WeatherFieldworkAgent` in `harvestamp/agents/weather_fieldwork.py`, `ProcurementAgent` in `harvestamp/agents/procurement.py`, `RecordsInventoryAgent` in `harvestamp/agents/records_inventory.py`, `MarketSalesAgent` in `harvestamp/agents/market_sales.py`, `ComplianceAgent` in `harvestamp/agents/compliance.py`, and `MarginScenarioAgent` in `harvestamp/agents/margin_scenario.py`.
+- Whitelisted `crop_health_watchlist` for `field_employee` and `field_lead` to ensure they can access crop health/scouting watchlist information.
 - Split Prairie View weekly procurement output into separate Fuel Watch and Fertilizer / Input Quote Watch sections, ensuring distinct decision cards are presented to the farmer and redacted operational views are shown to the field employee.
 - Cleaned up NWS and EIA shadow evidence labeling to prevent duplicate evidence items on the Evidence Board. If the connector succeeds, only the live or offline mock connector result is shown. If fallback is used, the fallback evidence is logged as `"Local Weather Fixture Fallback"` or `"Local Fuel Benchmark Fixture Fallback"`.
 - Appended decision anchor disclaimer to PVF-002 Fuel Buy Window summary and recommendation: `"The farm-specific supplier quote is the decision anchor; EIA is public benchmark context only."`

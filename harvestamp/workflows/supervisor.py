@@ -12,13 +12,13 @@ from harvestamp.context.builder import ContextPackageBuilder
 from harvestamp.core.evidence import EvidenceBoard
 from harvestamp.agents.synthesizer import RecommendationSynthesizer
 from harvestamp.policy.human_review_policy import HumanReviewPolicy
-from harvestamp.agents.specialists import (
-    WeatherAgent,
+from harvestamp.agents import (
+    WeatherFieldworkAgent,
     ProcurementAgent,
-    RecordsAgent,
-    MarketAgent,
+    RecordsInventoryAgent,
+    MarketSalesAgent,
     ComplianceAgent,
-    MarginAgent
+    MarginScenarioAgent
 )
 
 class Supervisor:
@@ -33,12 +33,12 @@ class Supervisor:
         self.synthesizer = RecommendationSynthesizer(human_review_policy=self.hr_policy)
         
         # Specialists
-        self.weather_agent = WeatherAgent()
+        self.weather_agent = WeatherFieldworkAgent()
         self.proc_agent = ProcurementAgent()
-        self.records_agent = RecordsAgent()
-        self.market_agent = MarketAgent()
+        self.records_agent = RecordsInventoryAgent()
+        self.market_agent = MarketSalesAgent()
         self.compliance_agent = ComplianceAgent()
-        self.margin_agent = MarginAgent()
+        self.margin_agent = MarginScenarioAgent()
 
     def route_intent(self, prompt: str, farm_profile: Dict[str, Any]) -> str:
         """Intent Router: Classifies user prompt into a task topic."""
