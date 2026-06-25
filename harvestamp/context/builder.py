@@ -123,6 +123,10 @@ class ContextPackageBuilder:
                     context_pkg["relevant_quotes"].append(q)
             context_pkg["included_fields"].extend(["organic_status", "organic_quotes"])
             context_pkg["excluded_fields"].extend(["packaging_inventory", "csa_member_list"])
+            
+        elif topic == "crop_health_watchlist":
+            context_pkg["included_fields"].extend(["crop_health_watchlist"])
+            context_pkg["excluded_fields"].extend(["fuel_quotes", "fertilizer_quotes", "stored_grain_inventory", "energy_benchmarks"])
 
         # Apply user role boundaries/redactions
         if user_role in ["field_employee", "market_staff"]:

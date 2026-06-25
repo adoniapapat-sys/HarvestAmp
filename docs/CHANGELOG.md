@@ -27,6 +27,10 @@ HarvestAmp follows a documentation-first build approach. Major product and archi
 - Ensured that `WeatherAgent` confidence is degraded to `"low"` and weather data is never hallucinated when NWS fails and fallback data is unavailable.
 
 ### Added
+- Implemented read-only `CropHealthWatchlistConnector` under the `crop_health_watchlist` capability in shadow mode, supporting live mode (env-flagged with `HARVESTAMP_CROP_HEALTH_SHADOW_LIVE`) and default offline mock mode.
+- Added Crop Health Watchlist source metadata entries (`DS-016`, `DS-017`, `DS-018`) with structured limitations to `fixtures/source_metadata.yaml` and mock data to `fixtures/data_observations.yaml`.
+- Integrated crop health watchlist context into `ComplianceAgent.run` to provide safety-gate refusals for spray queries and document/report rules for APHIS/regulatory alerts.
+- Added unit and regression tests in `tests/test_crop_health_watchlist_connector.py` verifying mock payloads, live mode, gateway mediation, decoupling constraints, APHIS alert behavior, spray refusal logic, organic cert safety-gates, and exclusions of watchlist data from unrelated workflows (PVF-002 and DOC-001).
 - Implemented read-only USDA AMS MyMarketNews connector (`DS-011`) in shadow mode in `harvestamp/connectors/ams_market_news.py`, supporting live mode (env-flagged with `HARVESTAMP_AMS_SHADOW_LIVE` and `HARVESTAMP_AMS_API_KEY`) and default offline mock mode.
 - Added `get_market_report` in `ToolGateway` in `harvestamp/gateway/tools.py` with capability checks (`marketdata_tool`), target-farm resolution, and fallback to local mock benchmark produce reports.
 - Integrated produce market report context in `MarketAgent.run` and `Supervisor.run_workflow` under GBO weekly plan (`weekly_plan_gbo`) and farmers market (`farmers_market`) topics.

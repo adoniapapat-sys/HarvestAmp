@@ -55,4 +55,55 @@
   freshness_status: "fresh"
   privacy_class: "Public"
   description: "USDA Agricultural Marketing Service MyMarketNews data."
+- source_id: "DS-016"
+  source_name: "Crop Protection Network"
+  source_type: "api"
+  trust_tier: "T1 Official / primary"
+  freshness_status: "fresh"
+  privacy_class: "Public"
+  description: "Crop Protection Network / Extension crop health context."
+  limitations:
+    sensitivity: "Public"
+    public_regional_context_only: true
+    not_a_field_diagnosis: true
+    not_a_pesticide_recommendation: true
+    does_not_override_farm_records: true
+    does_not_override_scouting_notes: true
+    does_not_override_advisor_notes: true
+    does_not_override_pesticide_labels_or_legal: true
+    does_not_override_organic_certification: true
+- source_id: "DS-017"
+  source_name: "NIFA Regional IPM Centers"
+  source_type: "api"
+  trust_tier: "T1 Official / primary"
+  freshness_status: "fresh"
+  privacy_class: "Public"
+  description: "NIFA Regional IPM Centers crop profiles, Pest Management Strategic Plans, and pest alerts."
+  limitations:
+    sensitivity: "Public"
+    public_regional_context_only: true
+    not_a_field_diagnosis: true
+    not_a_pesticide_recommendation: true
+    does_not_override_farm_records: true
+    does_not_override_scouting_notes: true
+    does_not_override_advisor_notes: true
+    does_not_override_pesticide_labels_or_legal: true
+    does_not_override_organic_certification: true
+- source_id: "DS-018"
+  source_name: "APHIS PPQ / CAPS"
+  source_type: "api"
+  trust_tier: "T1 Official / primary"
+  freshness_status: "fresh"
+  privacy_class: "Public"
+  description: "APHIS PPQ / CAPS regulated, invasive, and foreign pest surveillance context."
+  limitations:
+    sensitivity: "Public"
+    public_regional_context_only: true
+    not_a_field_diagnosis: true
+    not_a_pesticide_recommendation: true
+    does_not_override_farm_records: true
+    does_not_override_scouting_notes: true
+    does_not_override_advisor_notes: true
+    does_not_override_pesticide_labels_or_legal: true
+    does_not_override_organic_certification: true
 

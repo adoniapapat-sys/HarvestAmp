@@ -23,3 +23,15 @@ properties:
     type: string
   description:
     type: string
+  limitations:
+    type: object
+    properties:
+      sensitivity: { type: string }
+      public_regional_context_only: { type: boolean }
+      not_a_field_diagnosis: { type: boolean }
+      not_a_pesticide_recommendation: { type: boolean }
+      does_not_override_farm_records: { type: boolean }
+      does_not_override_scouting_notes: { type: boolean }
+      does_not_override_advisor_notes: { type: boolean }
+      does_not_override_pesticide_labels_or_legal: { type: boolean }
+      does_not_override_organic_certification: { type: boolean }

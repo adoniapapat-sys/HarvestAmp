@@ -15,6 +15,7 @@ TOOL_PERMISSIONS = {
     "weather_tool": "view_operational_data",
     "marketdata_tool": "view_operational_data",
     "crop_benchmark": "view_operational_data",
+    "crop_health_watchlist": "view_operational_data",
     "auth_tool": "manage_users"
 }
 

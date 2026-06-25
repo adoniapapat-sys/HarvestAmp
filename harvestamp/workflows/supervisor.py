@@ -68,7 +68,15 @@ class Supervisor:
             return "fertilizer_comparison"
         if "clamshell" in prompt_l or "box" in prompt_l or "csa" in prompt_l:
             return "packaging_reorder"
-        if "spray" in prompt_l:
+        # Crop health/scouting/watchlist/safety-gate prompts route to crop_health_watchlist
+        if any(term in prompt_l for term in [
+            "crop health", "scouting", "disease/pest watch", "disease watch", "pest watch",
+            "regulated/invasive pest awareness", "regulated pest", "invasive pest",
+            "safety-gate", "what should i spray", "what to spray"
+        ]):
+            return "crop_health_watchlist"
+
+        if "spray" in prompt_l or "treatment safety-gate" in prompt_l:
             return "spray_window"
         if "market" in prompt_l and farm_type == "small_organic_direct_market":
             return "farmers_market"
@@ -272,7 +280,7 @@ class Supervisor:
         
         # Verify that Field Employee cannot see quotes/pricing
         if user_role == "field_employee" and "supplier_pricing_redacted" in context_pkg.get("redactions_applied", []):
-            if topic not in ["weekly_plan_pvf", "weekly_plan_gbo"]:
+            if topic not in ["weekly_plan_pvf", "weekly_plan_gbo", "spray_window", "irrigation_advisory", "irrigation_request", "crop_health_watchlist"]:
                 if self.audit_logger:
                     self.audit_logger.log_access(user_id=user_id, farm_id=requesting_farm_id, action="attempt_view_quotes_employee", result="redacted")
                 overall_hr = {
@@ -299,7 +307,7 @@ class Supervisor:
 
         # Verify that Field Lead cannot see CSA contact emails
         if user_role == "field_lead" and "customer_emails_redacted" in context_pkg.get("redactions_applied", []):
-            if topic not in ["weekly_plan_pvf", "weekly_plan_gbo"]:
+            if topic not in ["weekly_plan_pvf", "weekly_plan_gbo", "spray_window", "irrigation_advisory", "irrigation_request", "crop_health_watchlist"]:
                 if self.audit_logger:
                     self.audit_logger.log_access(user_id=user_id, farm_id=requesting_farm_id, action="attempt_view_customer_emails_lead", result="redacted")
                 overall_hr = {
@@ -334,6 +342,7 @@ class Supervisor:
         benchmark_data = {}
         crop_benchmark_data = None
         market_report_data = None
+        crop_health_watchlist_data = {}
         
         # Query weather tool if needed
         if topic in ["diesel_purchase_window", "weekly_plan_pvf", "weekly_plan_gbo", "farmers_market", "spray_window", "irrigation_advisory", "irrigation_request"]:
@@ -530,6 +539,36 @@ class Supervisor:
 
 
  
+        # Get Crop Health Watchlist context if relevant workflow topic
+        if topic in ["weekly_plan_pvf", "weekly_plan_gbo", "spray_window", "crop_health_watchlist"]:
+            grant_ch = self.broker.request_capability_grant(farm_profile, user_id, "crop_health_watchlist")
+            if grant_ch["authorized"]:
+                res_ch = self.gateway.get_crop_health_watchlist(
+                    grant_ch,
+                    requesting_farm_id,
+                    target_farm_id,
+                    observations,
+                    farm_profile=farm_profile,
+                    evidence_board=evidence_board
+                )
+                evidence_board.add_evidence(
+                    evidence_id=res_ch["result_id"],
+                    source_id=res_ch["source_id"],
+                    source_name=res_ch.get("source_name", "Crop Health Watchlist API"),
+                    trust_tier=res_ch["trust_tier"],
+                    freshness_status=res_ch["freshness_status"],
+                    privacy_class=res_ch["privacy_class"],
+                    data_payload=res_ch["payload"],
+                    description="Regional crop health watchlist context",
+                    timestamp=res_ch.get("timestamp"),
+                    farm_id=res_ch.get("farm_id"),
+                    authorization_status=res_ch.get("authorization_status"),
+                    connector_mode=res_ch.get("connector_mode"),
+                    fallback_used=res_ch.get("fallback_used"),
+                    fallback_reason=res_ch.get("fallback_reason")
+                )
+                crop_health_watchlist_data = res_ch
+
         # Query records_tool if needed
         if topic in ["diesel_purchase_window", "weekly_plan_pvf", "weekly_plan_gbo", "packaging_reorder", "spray_window", "organic_input_verification"]:
             grant = self.broker.request_capability_grant(farm_profile, user_id, "records_tool")
@@ -618,12 +657,13 @@ class Supervisor:
             findings.append(rec_finding)
             
         # Compliance Agent
-        if topic in ["spray_window", "organic_input_verification", "weekly_plan_pvf", "weekly_plan_gbo", "irrigation_advisory", "irrigation_request"]:
+        if topic in ["spray_window", "organic_input_verification", "weekly_plan_pvf", "weekly_plan_gbo", "irrigation_advisory", "irrigation_request", "crop_health_watchlist"]:
             comp_finding = self.compliance_agent.run(
                 work_item={"work_item_id": f"wi_co_{user_id}", "workflow_id": workflow_id, "farm_id": target_farm_id, "requesting_user_id": user_id, "user_intent": prompt, "topic": topic},
-                context=context_pkg
+                context=context_pkg,
+                crop_health_watchlist=crop_health_watchlist_data
             )
-            findings.append(comp_finding)
+            append_agent_findings(comp_finding)
             
         # Market Agent
         if topic in ["weekly_plan_pvf", "weekly_plan_gbo", "farmers_market"]:

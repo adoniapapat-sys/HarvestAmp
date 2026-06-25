@@ -127,4 +127,77 @@ properties:
             turnout_id: { type: string }
             duration_hours: { type: number }
             day_of_week: { type: string }
+  crop_health_watchlist:
+    type: object
+    additionalProperties:
+      type: object
+      required:
+        - source_id
+        - timestamp
+        - trust_tier
+        - freshness_status
+        - privacy_class
+        - farm_id
+        - authorization_status
+        - evidence_id
+        - watchlist
+      properties:
+        source_id: { type: string }
+        timestamp: { type: string }
+        trust_tier: { type: string }
+        freshness_status: { type: string }
+        privacy_class: { type: string }
+        farm_id: { type: [string, "null"] }
+        authorization_status: { type: string }
+        evidence_id: { type: string }
+        watchlist:
+          type: array
+          items:
+            type: object
+            required:
+              - crop
+              - region
+              - state
+              - issue_name
+              - issue_type
+              - source_category
+              - alert_scope
+              - risk_level
+              - regulatory_relevance
+              - source_name
+              - source_reference
+              - connector_mode
+              - fallback_used
+              - fallback_reason
+              - limitations
+            properties:
+              crop: { type: string }
+              region: { type: string }
+              state: { type: string }
+              county_or_area: { type: string }
+              issue_name: { type: string }
+              issue_type:
+                type: string
+                enum: [disease, pest, weed, abiotic, regulated_pest, invasive_pest, unknown]
+              source_category:
+                type: string
+                enum: [crop_protection_network, regional_ipm_center, state_extension, aphis_ppq_caps, mock_fixture]
+              alert_scope:
+                type: string
+                enum: [regional_watchlist, crop_profile, pest_management_strategic_plan, pest_alert, regulated_pest_alert, invasive_pest_alert, extension_bulletin, disease_forecast]
+              risk_level:
+                type: string
+                enum: [low, moderate, high, watch, background, unknown]
+              regulatory_relevance:
+                type: string
+                enum: [none, watch, reportable_possible, quarantine_relevant, unknown]
+              report_date: { type: string }
+              observation_window: { type: string }
+              source_name: { type: string }
+              source_reference: { type: string }
+              source_url: { type: string }
+              connector_mode: { type: string }
+              fallback_used: { type: boolean }
+              fallback_reason: { type: [string, "null"] }
+              limitations: { type: string }
 

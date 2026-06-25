@@ -105,6 +105,11 @@ def validate_object(obj: Any, schema: Dict[str, Any], path: str = "root") -> Tup
                     sub_valid, sub_errors = validate_object(val, prop_schema, f"{path}.{field}")
                     if not sub_valid:
                         errors.extend(sub_errors)
+            
+        # Check enum constraints if present
+        if "enum" in prop_schema:
+            if val not in prop_schema["enum"]:
+                errors.append(f"[{path}.{field}] Value '{val}' is not one of allowed values: {prop_schema['enum']}")
                     
     return len(errors) == 0, errors
 
