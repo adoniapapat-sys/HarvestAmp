@@ -26,7 +26,9 @@ class EvidenceBoard:
         timestamp: Optional[str] = None,
         farm_id: Optional[str] = None,
         authorization_status: Optional[str] = None,
-        connector_mode: Optional[str] = None
+        connector_mode: Optional[str] = None,
+        fallback_used: Optional[bool] = None,
+        fallback_reason: Optional[str] = None
     ) -> Dict[str, Any]:
         """Creates and stores an EvidenceItem."""
         if not retrieved_at:
@@ -50,6 +52,10 @@ class EvidenceBoard:
         }
         if connector_mode:
             evidence_item["connector_mode"] = connector_mode
+        if fallback_used is not None:
+            evidence_item["fallback_used"] = fallback_used
+        if fallback_reason is not None:
+            evidence_item["fallback_reason"] = fallback_reason
             
         self.evidence_store[evidence_id] = evidence_item
         return evidence_item

@@ -132,7 +132,9 @@ def main():
     if not action_pack["evidence_summary"]:
         print("None.")
     for ev in action_pack["evidence_summary"]:
-        print(f"- {ev['evidence_id']} from {ev['source_name']} (Trust: {ev['trust_tier']}, Freshness: {ev['freshness_status']})")
+        mode_str = f" | Mode: {ev['connector_mode']}" if ev.get('connector_mode') else ""
+        reason_str = f" | Fallback reason: {ev['fallback_reason']}" if ev.get('fallback_reason') else ""
+        print(f"- {ev['evidence_id']} from {ev['source_name']} (Trust: {ev['trust_tier']}, Freshness: {ev['freshness_status']}{mode_str}{reason_str})")
 
     print("\n--- WARNINGS & MISSING DATA ---")
     for w in action_pack["warnings"]:
