@@ -132,6 +132,8 @@ Any future work, validations, or open questions.
 | D-035 | Implement EIA Fuel Benchmark Connector in Shadow Mode | accepted |
 | D-036 | Use USDA NASS Quick Stats as official regional benchmark context, not farm-specific yield truth | accepted |
 | D-037 | Use USDA AMS MyMarketNews as official market report context, not farm-specific sales truth | accepted |
+| D-038 | Use Crop Health Watchlist as read-only shadow/watchlist context, not treatment advice | accepted |
+| D-039 | Make specialist agents explicit and align weekly plan outputs with the Grand Plan sections | accepted |
 
 ---
 
@@ -1604,5 +1606,28 @@ HarvestAmp will implement a read-only `CropHealthWatchlistConnector` in shadow/w
 ### Consequences
 
 HarvestAmp provides regional crop health awareness to farmers safely, without prescribing chemical treatments or violating regulatory quarantine reporting guidelines.
+
+
+## D-039: Make specialist agents explicit and align weekly plan outputs with the Grand Plan sections
+
+Status: accepted
+Date: 2026-06-25
+Owner: Architecture Lead
+Related docs: `02_AGENT_ARCHITECTURE.md`, `10_BUILD_PLAN.md`
+
+### Context
+
+To satisfy the first vertical slice alignment of the Grand Plan, specialist agents must be explicitly exposed in separate agent modules. Additionally, the weekly action plan output printed by the CLI simulator should map directly to the 12 required sections for Prairie View Farms and Green Basket Organics.
+
+### Decision
+
+1. Expose explicit mock specialist agents: `WeatherFieldworkAgent`, `ProcurementAgent`, `RecordsInventoryAgent`, `MarketSalesAgent`, `ComplianceAgent`, and `MarginScenarioAgent` in dedicated modules under `harvestamp/agents/`.
+2. Update the supervisor weekly-plan topic routing to invoke these agents and return AgentFinding-shaped objects.
+3. Update `scripts/run_weekly_plan.py` to organize and print findings exactly according to the 12 Grand Plan sections.
+
+### Consequences
+
+The weekly action plan outputs are fully structured and consistent with the Grand Plan expectations, and agent boundaries are cleanly defined and exposed.
+
 
 
