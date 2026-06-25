@@ -17,6 +17,12 @@ HarvestAmp follows a documentation-first build approach. Major product and archi
 
 ## [Unreleased]
 
+### Changed
+- Hardened NWS shadow connector labeling: dynamically sets source names to `"National Weather Service API (live)"` or `"National Weather Service API (shadow/offline)"` depending on live environment configuration to maintain honest evidence representation.
+- Added `connector_mode` metadata tracking across NWS Weather Connector, Evidence Board, and Tool Gateway with values `"live"`, `"offline_mock"`, and `"fixture_fallback"`.
+- Improved NWS failure handling: preserves the failed NWS ConnectorResult as shadow evidence on the Evidence Board, and records the `"Local Weather Fixture Fallback"` data as a separate, distinct evidence item.
+- Ensured that `WeatherAgent` confidence is degraded to `"low"` and weather data is never hallucinated when NWS fails and fallback data is unavailable.
+
 ### Added
 - Implemented mock/manual irrigation scheduling and water-request workflows (IRR-001 through IRR-005) using local fixture data only.
 - Added YAML fixtures and schema definitions for `irrigation_schedules` and `irrigation_requests` under `fixtures/data_observations.yaml`, `fixtures/scenarios.yaml`, and `schemas/data_observations.schema.yaml`.
