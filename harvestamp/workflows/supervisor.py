@@ -332,6 +332,7 @@ class Supervisor:
         quotes_data = []
         inv_data = []
         benchmark_data = {}
+        crop_benchmark_data = None
         
         # Query weather tool if needed
         if topic in ["diesel_purchase_window", "weekly_plan_pvf", "weekly_plan_gbo", "farmers_market", "spray_window", "irrigation_advisory", "irrigation_request"]:
@@ -466,6 +467,36 @@ class Supervisor:
                     )
                     benchmark_data = res_bench
  
+            # Get Crop Benchmark if row crops weekly plan
+            if topic == "weekly_plan_pvf":
+                grant_crop = self.broker.request_capability_grant(farm_profile, user_id, "crop_benchmark")
+                if grant_crop["authorized"]:
+                    res_crop = self.gateway.get_crop_benchmark(
+                        grant_crop,
+                        requesting_farm_id,
+                        target_farm_id,
+                        observations,
+                        farm_profile=farm_profile,
+                        evidence_board=evidence_board
+                    )
+                    evidence_board.add_evidence(
+                        evidence_id=res_crop["result_id"],
+                        source_id=res_crop["source_id"],
+                        source_name=res_crop.get("source_name", "USDA NASS Quick Stats API"),
+                        trust_tier=res_crop["trust_tier"],
+                        freshness_status=res_crop["freshness_status"],
+                        privacy_class=res_crop["privacy_class"],
+                        data_payload=res_crop["payload"],
+                        description="Regional USDA NASS crop benchmarks",
+                        timestamp=res_crop.get("timestamp"),
+                        farm_id=res_crop.get("farm_id"),
+                        authorization_status=res_crop.get("authorization_status"),
+                        connector_mode=res_crop.get("connector_mode"),
+                        fallback_used=res_crop.get("fallback_used"),
+                        fallback_reason=res_crop.get("fallback_reason")
+                    )
+                    crop_benchmark_data = res_crop
+ 
         # Query records_tool if needed
         if topic in ["diesel_purchase_window", "weekly_plan_pvf", "weekly_plan_gbo", "packaging_reorder", "spray_window", "organic_input_verification"]:
             grant = self.broker.request_capability_grant(farm_profile, user_id, "records_tool")
@@ -516,6 +547,12 @@ class Supervisor:
         # 5. Route to Specialist Agents
         findings = []
         
+        def append_agent_findings(result):
+            if isinstance(result, list):
+                findings.extend(result)
+            elif result:
+                findings.append(result)
+        
         # Weather Agent
         if weather_data:
             weather_finding = self.weather_agent.run(
@@ -523,7 +560,7 @@ class Supervisor:
                 context=context_pkg,
                 weather_obs=weather_data
             )
-            findings.append(weather_finding)
+            append_agent_findings(weather_finding)
             
         # Procurement Agent
         if quotes_data or inv_data or benchmark_data:
@@ -534,7 +571,7 @@ class Supervisor:
                 inventory=inv_data,
                 benchmark=benchmark_data
             )
-            findings.append(proc_finding)
+            append_agent_findings(proc_finding)
 
         # Records Agent
         if topic in ["weekly_plan_pvf", "weekly_plan_gbo", "packaging_reorder", "spray_window", "organic_input_verification", "irrigation_advisory", "irrigation_request"]:
@@ -559,7 +596,8 @@ class Supervisor:
         if topic in ["weekly_plan_pvf", "weekly_plan_gbo", "farmers_market"]:
             mkt_finding = self.market_agent.run(
                 work_item={"work_item_id": f"wi_ma_{user_id}", "workflow_id": workflow_id, "farm_id": target_farm_id, "requesting_user_id": user_id, "user_intent": prompt, "topic": topic},
-                context=context_pkg
+                context=context_pkg,
+                crop_benchmark=crop_benchmark_data
             )
             findings.append(mkt_finding)
  
@@ -567,7 +605,8 @@ class Supervisor:
         if topic in ["diesel_purchase_window", "fertilizer_comparison", "weekly_plan_pvf", "packaging_reorder"]:
             mrgn_finding = self.margin_agent.run(
                 work_item={"work_item_id": f"wi_mr_{user_id}", "workflow_id": workflow_id, "farm_id": target_farm_id, "requesting_user_id": user_id, "user_intent": prompt, "topic": topic},
-                context=context_pkg
+                context=context_pkg,
+                crop_benchmark=crop_benchmark_data
             )
             findings.append(mrgn_finding)
  

@@ -235,39 +235,87 @@ class ProcurementAgent(BaseAgent):
                 bench_text = f"Public benchmark context: EIA regional diesel price benchmark is {trend_display}."
 
         if topic == "weekly_plan_pvf":
+            # Filter evidence for Fuel Watch
+            fuel_quotes = [q for q in quotes if q["payload"].get("input_type") == "diesel"]
+            fuel_inv = [inv for inv in inventory if inv["payload"].get("item_type") == "diesel"]
+            fuel_evidence_ids = [q["result_id"] for q in fuel_quotes] + [inv["result_id"] for inv in fuel_inv]
+            if benchmark:
+                fuel_evidence_ids.append(benchmark["result_id"])
+
+            # Filter evidence for Fertilizer Watch
+            fert_quotes = [q for q in quotes if q["payload"].get("product_name") in ["Urea", "UAN 32"]]
+            fert_evidence_ids = [q["result_id"] for q in fert_quotes]
+
             if user_role == "field_employee":
-                summary = "Fuel readiness needs management review. Supplier quotes, input pricing, and detailed fuel status are hidden for your role."
-                recommendation = "Fuel readiness needs management review. Supplier quotes, input pricing, and detailed fuel status are hidden for your role."
-                return self.create_finding(
-                    work_item, "weekly_plan_pvf", summary, recommendation, "info", "high", evidence_ids,
+                fuel_summary = "Fuel readiness needs management review. Supplier quotes, input pricing, and detailed fuel status are hidden for your role."
+                fuel_rec = "Fuel readiness needs management review. Supplier quotes, input pricing, and detailed fuel status are hidden for your role."
+                f_fuel = self.create_finding(
+                    work_item, "weekly_plan_pvf", fuel_summary, fuel_rec, "info", "high", fuel_evidence_ids,
                     prohibited_disclosures=["supplier_quotes", "input_prices"]
                 )
-            else:
-                summary = "Diesel inventory is 1,350 gallons in a 4,000-gallon tank. Expected 30-day need is 3,100 gallons with a 700-gallon reserve, triggering a low fuel watch. Current diesel quote is valid until 2026-06-25."
-                if bench_text:
-                    summary += f" {bench_text} The farm-specific supplier quote is the decision anchor; EIA is public benchmark context only."
-                summary += " Urea quote at $475/ton and UAN 32 quote at $340/ton are available, but delivery and application fees are missing."
-                recommendation = "Prepare a fuel quote inquiry for approval. Compare fertilizer material costs and confirm delivery and application fees before ordering. The farm-specific supplier quote is the decision anchor; EIA is public benchmark context only."
-                
-                # Do not downgrade the whole fuel recommendation confidence if farm-specific details are current.
-                confidence_val = "medium"
-                
-                f = self.create_finding(
-                    work_item, "weekly_plan_pvf", summary, recommendation, "high", confidence_val, evidence_ids,
-                    assumptions=["Fuel usage aligns with 30-day operational needs."],
-                    missing_data=["fertilizer delivery fee", "fertilizer application fee"]
+                f_fuel["recommendation_type"] = "fuel_watch"
+
+                fert_summary = "Input quote details are hidden for your role."
+                fert_rec = "Contact farm management for fertilizer pricing details."
+                f_fert = self.create_finding(
+                    work_item, "weekly_plan_pvf_fertilizer", fert_summary, fert_rec, "info", "high", fert_evidence_ids,
+                    prohibited_disclosures=["supplier_quotes", "input_prices"]
                 )
+                f_fert["recommendation_type"] = "fertilizer_quote_watch"
+                
+                return [f_fuel, f_fert]
+            else:
+                # Fuel Watch Finding
+                fuel_summary = "Diesel inventory is 1,350 gallons in a 4,000-gallon tank. Expected 30-day need is 3,100 gallons with a 700-gallon reserve, triggering a low fuel watch. Current diesel quote is valid until 2026-06-25."
+                if bench_text:
+                    fuel_summary += f" {bench_text} The farm-specific supplier quote is the decision anchor; EIA is public benchmark context only."
+                fuel_rec = "Prepare a fuel quote inquiry for approval. The farm-specific supplier quote is the decision anchor; EIA is public benchmark context only."
+                
+                f_fuel = self.create_finding(
+                    work_item, "weekly_plan_pvf", fuel_summary, fuel_rec, "high", "medium", fuel_evidence_ids,
+                    assumptions=["Fuel usage aligns with 30-day operational needs."],
+                    missing_data=[]
+                )
+                f_fuel["recommendation_type"] = "fuel_watch"
                 if bench_failed_or_stale:
-                    f["missing_data"].append("Fresh EIA diesel benchmark")
+                    f_fuel["missing_data"].append("Fresh EIA diesel benchmark")
                     
-                f["human_review"] = {
+                f_fuel["human_review"] = {
                     "required": True,
                     "review_type": "user_approval",
                     "risk_tier": "tier_2",
                     "status": "needs_user_approval",
                     "reason": ["financial_action"]
                 }
-                return f
+
+                # Fertilizer / Input Quote Watch Finding
+                urea_quote = next((q["payload"] for q in quotes if q["payload"].get("product_name") == "Urea"), {})
+                uan_quote = next((q["payload"] for q in quotes if q["payload"].get("product_name") == "UAN 32"), {})
+                
+                urea_price = urea_quote.get("price", 475.00)
+                uan_price = uan_quote.get("price", 340.00)
+                
+                urea_cost_n = calculate_fertilizer_cost_per_pound_nitrogen(urea_price, 46)
+                uan_cost_n = calculate_fertilizer_cost_per_pound_nitrogen(uan_price, 32)
+                
+                fert_summary = f"Urea quote at ${urea_price}/ton and UAN 32 quote at ${uan_price}/ton are available, but delivery and application fees are missing. Based on material price only, urea is slightly cheaper per pound of nitrogen (${urea_cost_n:.4f}/lb N) compared to UAN 32 (${uan_cost_n:.4f}/lb N), but fees are missing."
+                fert_rec = "Confirm delivery and application fees before ordering."
+                
+                f_fert = self.create_finding(
+                    work_item, "weekly_plan_pvf_fertilizer", fert_summary, fert_rec, "medium", "medium", fert_evidence_ids,
+                    assumptions=["Material prices are accurate before fees."],
+                    missing_data=["fertilizer delivery fee", "fertilizer application fee"]
+                )
+                f_fert["recommendation_type"] = "fertilizer_quote_watch"
+                f_fert["human_review"] = {
+                    "required": False,
+                    "review_type": "none",
+                    "risk_tier": "tier_0",
+                    "status": "review_not_required",
+                    "reason": []
+                }
+
+                return [f_fuel, f_fert]
 
         elif topic == "weekly_plan_gbo":
             if user_role in ["field_lead", "market_staff", "external_reviewer"]:
@@ -567,7 +615,7 @@ class MarketAgent(BaseAgent):
     def __init__(self):
         super().__init__("Market + Sales Agent")
 
-    def run(self, work_item: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    def run(self, work_item: Dict[str, Any], context: Dict[str, Any], crop_benchmark: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         topic = get_topic_with_fallback(work_item, context)
         user_role = context.get("user_role", "")
 
@@ -761,7 +809,7 @@ class MarginAgent(BaseAgent):
     def __init__(self):
         super().__init__("Margin + Scenario Agent")
 
-    def run(self, work_item: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    def run(self, work_item: Dict[str, Any], context: Dict[str, Any], crop_benchmark: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         topic = get_topic_with_fallback(work_item, context)
         user_role = context.get("user_role", "")
 
@@ -774,9 +822,39 @@ class MarginAgent(BaseAgent):
             )
 
         if topic == "weekly_plan_pvf":
+            nass_info = ""
+            evidence_ids = []
+            confidence = "medium"
+            if crop_benchmark and crop_benchmark.get("payload"):
+                payload_crops = crop_benchmark["payload"].get("crops", {})
+                corn = payload_crops.get("corn", {})
+                soy = payload_crops.get("soybeans", {})
+                
+                corn_co = corn.get("yield_county_bushels_per_acre")
+                corn_st = corn.get("yield_state_bushels_per_acre")
+                soy_co = soy.get("yield_county_bushels_per_acre")
+                soy_st = soy.get("yield_state_bushels_per_acre")
+                
+                parts = []
+                if corn_co or corn_st:
+                    parts.append(f"Corn county yield {corn_co or 'N/A'} bu/acre (state: {corn_st or 'N/A'} bu/acre)")
+                if soy_co or soy_st:
+                    parts.append(f"Soybean county yield {soy_co or 'N/A'} bu/acre (state: {soy_st or 'N/A'} bu/acre)")
+                    
+                if parts:
+                    nass_info = "USDA NASS county/state benchmark data is included as regional context only: " + " and ".join(parts) + ". Prairie View's farm-specific records remain the decision anchor."
+                    evidence_ids.append(crop_benchmark.get("result_id"))
+                else:
+                    nass_info = "USDA NASS crop benchmarks are unavailable or stale. Prairie View's farm-specific records remain the decision anchor."
+            elif crop_benchmark:
+                nass_info = "USDA NASS crop benchmarks are unavailable. Prairie View's farm-specific records remain the decision anchor."
+                confidence = "low"
+                
             summary = "Operating margin scenario watch: conventional row-crop estimates show thin margins at current basis."
+            if nass_info:
+                summary += f" {nass_info}"
             recommendation = "Perform scenario analysis for any input purchase exceeding $1,000."
-            return self.create_finding(work_item, "margin_scenario", summary, recommendation, "info", "medium", [])
+            return self.create_finding(work_item, "margin_scenario", summary, recommendation, "info", confidence, evidence_ids)
 
         elif topic in ["weekly_plan_gbo", "packaging_reorder"]:
             summary = "Operating margin notes: organic vegetable margins remain stable under direct-market pricing."

@@ -42,7 +42,6 @@ properties:
         - farm_id
         - authorization_status
         - evidence_id
-        - value
       properties:
         source_id: { type: string }
         timestamp: { type: string }
@@ -52,6 +51,15 @@ properties:
         farm_id: { type: [string, "null"] }
         authorization_status: { type: string }
         evidence_id: { type: string }
+        value: { type: string }
+        crops:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              yield_county_bushels_per_acre: { type: number }
+              yield_state_bushels_per_acre: { type: number }
+              acreage_state_acres: { type: number }
   irrigation_schedules:
     type: object
     additionalProperties:
