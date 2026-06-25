@@ -57,7 +57,13 @@ def main():
     print(f"RUNNING SCENARIO: {scenario['scenario_id']} - {scenario['name']}")
     print(f"Farm Profile:    {scenario['farm_profile']}")
     print(f"User / Role:     {scenario.get('user_id', 'unknown')} ({scenario['user_role']})")
-    print(f"Prompt:          \"{scenario['prompt']}\"")
+    
+    prompt_print = scenario['prompt']
+    prompt_l = prompt_print.lower()
+    if "password" in prompt_l or "passwd" in prompt_l or "waterpass" in prompt_l or "secret_key" in prompt_l:
+        prompt_print = "[REDACTED credential-bearing prompt]"
+        
+    print(f"Prompt:          \"{prompt_print}\"")
     print("=" * 80)
 
     # Load appropriate farm profile

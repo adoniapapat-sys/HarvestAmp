@@ -52,3 +52,66 @@ properties:
         farm_id: { type: [string, "null"] }
         authorization_status: { type: string }
         evidence_id: { type: string }
+  irrigation_schedules:
+    type: object
+    additionalProperties:
+      type: object
+      required:
+        - source_id
+        - timestamp
+        - trust_tier
+        - freshness_status
+        - privacy_class
+        - farm_id
+        - authorization_status
+        - evidence_id
+        - schedule
+      properties:
+        source_id: { type: string }
+        timestamp: { type: string }
+        trust_tier: { type: string }
+        freshness_status: { type: string }
+        privacy_class: { type: string }
+        farm_id: { type: [string, "null"] }
+        authorization_status: { type: string }
+        evidence_id: { type: string }
+        schedule:
+          type: object
+          properties:
+            field_id: { type: string }
+            crop: { type: string }
+            manual_schedule: { type: string }
+            soil_moisture: { type: string }
+            water_allocation_balance: { type: string }
+            crop_water_demand_target: { type: string }
+  irrigation_requests:
+    type: object
+    additionalProperties:
+      type: object
+      required:
+        - source_id
+        - timestamp
+        - trust_tier
+        - freshness_status
+        - privacy_class
+        - farm_id
+        - authorization_status
+        - evidence_id
+        - request_context
+      properties:
+        source_id: { type: string }
+        timestamp: { type: string }
+        trust_tier: { type: string }
+        freshness_status: { type: string }
+        privacy_class: { type: string }
+        farm_id: { type: [string, "null"] }
+        authorization_status: { type: string }
+        evidence_id: { type: string }
+        request_context:
+          type: object
+          properties:
+            provider_name: { type: string }
+            turnout_id: { type: string }
+            duration_hours: { type: number }
+            day_of_week: { type: string }
+

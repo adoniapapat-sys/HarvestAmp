@@ -43,3 +43,36 @@ benchmarks:
     authorization_status: "authorized"
     evidence_id: "res_benchmark_diesel"
     value: "mock_regional_diesel_benchmark_flat_to_slightly_down"
+irrigation_schedules:
+  GBO_DIRECT_001:
+    source_id: "DS-029"
+    timestamp: "2026-06-22T08:00:00-05:00"
+    trust_tier: "T3 User-entered"
+    freshness_status: "fresh"
+    privacy_class: "Farm Restricted"
+    farm_id: "GBO_DIRECT_001"
+    authorization_status: "authorized"
+    evidence_id: "res_irr_sched_GBO_DIRECT_001"
+    schedule:
+      field_id: "GBO_AREA_FIELD_A"
+      crop: "lettuce"
+      manual_schedule: "district turn available on Thursday 08:00 - 20:00"
+      soil_moisture: "declining"
+      water_allocation_balance: "unknown"
+      crop_water_demand_target: "unknown"
+irrigation_requests:
+  GBO_DIRECT_001:
+    source_id: "DS-029"
+    timestamp: "2026-06-22T08:00:00-05:00"
+    trust_tier: "T1 Official / primary"
+    freshness_status: "fresh"
+    privacy_class: "Farm Restricted"
+    farm_id: "GBO_DIRECT_001"
+    authorization_status: "authorized"
+    evidence_id: "res_irr_req_GBO_DIRECT_001"
+    request_context:
+      provider_name: "River County Water District"
+      turnout_id: "TURNOUT_GBO_A"
+      duration_hours: 12
+      day_of_week: "Tuesday"
+

@@ -58,6 +58,10 @@ class RecommendationSynthesizer:
                 title = "Fuel and Input Watch"
             elif title == "Weekly Plan Gbo":
                 title = "Packaging and Input Watch"
+            elif title == "Irrigation Advisory":
+                title = "Irrigation Schedule Advisory"
+            elif title == "Irrigation Request Records":
+                title = "Irrigation Request Draft"
             
             # Create a recommendation card
             rec = {
@@ -148,6 +152,36 @@ class RecommendationSynthesizer:
                     }
                     proposed_actions.append(action)
                     rec["proposed_actions"].append(action)
+
+            elif finding_topic == "irrigation_request_records":
+                if user_role not in ["field_lead", "market_staff", "external_reviewer"]:
+                    is_low_conf = f.get("confidence") == "low"
+                    if not is_low_conf:
+                        action = {
+                            "action_id": f"act_irrigation_request_{action_pack_id}",
+                            "action_type": "submit_irrigation_request",
+                            "status": "needs_user_approval",
+                            "execution_status": "blocked_until_approved",
+                            "disclosure_preview_required": True,
+                            "payload": {
+                                "field_id": "GBO_AREA_FIELD_A",
+                                "turnout_id": "TURNOUT_GBO_A",
+                                "duration_hours": 12,
+                                "day_of_week": "Tuesday",
+                                "provider_name": "River County Water District"
+                            },
+                            "human_review_status": {
+                                "required": True,
+                                "review_type": "user_approval",
+                                "risk_tier": "tier_2",
+                                "status": "needs_user_approval",
+                                "execution_status": "blocked_until_approved",
+                                "disclosure_preview_required": True,
+                                "reason": ["irrigation_water_request"]
+                            }
+                        }
+                        proposed_actions.append(action)
+                        rec["proposed_actions"].append(action)
 
             elif finding_topic == "spray_window" and "pesticide" in str(f.get("summary", "")).lower():
                 # Blocked action
@@ -257,6 +291,10 @@ class RecommendationSynthesizer:
                 overall_hr["reason"].extend(f_hr.get("reason", []))
                 overall_hr["recommended_reviewer"].extend(f_hr.get("recommended_reviewer", []))
                 overall_hr["approval_required_before"].extend(f_hr.get("approval_required_before", []))
+            elif f_hr.get("status") == "needs_info":
+                if overall_hr["status"] in ["review_not_required", "needs_soft_confirmation"]:
+                    overall_hr["status"] = "needs_info"
+                overall_hr["reason"].extend(f_hr.get("reason", []))
 
         # Loop over proposed actions to ensure they are aggregated
         for act in proposed_actions:
