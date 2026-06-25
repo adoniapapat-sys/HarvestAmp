@@ -657,3 +657,12 @@ class Supervisor:
             action_pack["warnings"].append("Supplier quotes, input pricing, margin, and marketing details are hidden for your role.")
         
         return action_pack
+
+
+# HARVESTAMP_LOCAL_DOCUMENT_WORKFLOW_EXTENSION
+try:
+    from harvestamp.extraction.supervisor_extension import register_local_document_workflow
+    register_local_document_workflow(Supervisor)
+except Exception:
+    # Keep existing MVP scaffold importable even if optional extraction files are absent.
+    pass

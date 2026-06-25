@@ -1,0 +1,9 @@
+Synthetic local upload - packaging invoice
+Supplier: Market Pack Supply
+Invoice Date: 2026-06-19
+Product: Clear pint clamshells, CSA wax boxes, roll labels
+- 80 cases clear pint clamshells @ $18.50/case = $1480.00
+- 20 boxes CSA wax boxes @ $12.00/box = $240.00
+- 5 rolls labels @ $17.00/roll = $85.00
+Delivery Fee: $42.00
+Total: $1847.00

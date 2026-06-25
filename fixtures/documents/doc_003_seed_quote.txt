@@ -1,0 +1,10 @@
+Synthetic local upload - seed quote
+Supplier: North Ridge Seed
+Quote Date: 2026-06-18
+Crop: Corn
+Hybrid: NR 112-day VT2P synthetic
+Bags: 180
+Unit Price: $289/bag
+Treatment: standard fungicide treatment; trait package VT2P
+Discount Terms: 4% early pay if approved by 2026-07-01
+Notes: Population target and acre target are not listed in the quote.

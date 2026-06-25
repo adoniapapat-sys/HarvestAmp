@@ -1,0 +1,54 @@
+# HarvestAmp local document extraction result schema (shadow milestone)
+type: object
+required:
+  - document_id
+  - farm_id
+  - document_type
+  - source_name
+  - source_file_reference
+  - extraction_status
+  - extraction_confidence
+  - data_sensitivity
+  - extracted_fields
+  - missing_fields
+  - redactions_applied
+  - evidence_id
+  - human_review
+properties:
+  document_id:
+    type: string
+  farm_id:
+    type: string
+  document_type:
+    type: string
+    enum: [fuel_invoice, fertilizer_quote, seed_quote, packaging_invoice, general_input_invoice, unknown]
+  source_name:
+    type: string
+  source_file_reference:
+    type: string
+  extraction_status:
+    type: string
+    enum: [success, partial, failed, blocked]
+  extraction_confidence:
+    type: string
+    enum: [high, medium, low]
+  data_sensitivity:
+    type: string
+    enum: [Farm Restricted]
+  extracted_fields:
+    type: object
+  missing_fields:
+    type: array
+  redactions_applied:
+    type: array
+  evidence_id:
+    type: string
+  human_review:
+    type: object
+    required: [required, review_type, status]
+  official_update_allowed:
+    type: boolean
+  external_actions_allowed:
+    type: boolean
+  decision_anchor_status:
+    type: string

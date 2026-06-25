@@ -1,0 +1,9 @@
+Synthetic local upload - fuel invoice
+Supplier: River County Fuel Cooperative
+Invoice Date: 2026-06-20
+Product: Dyed diesel
+Gallons: 2500
+Unit Price: $3.62/gallon
+Delivery Fee: $235.00
+Total: $9285.00
+Notes: Farm-specific invoice for Prairie View Farms. No payment credentials included.

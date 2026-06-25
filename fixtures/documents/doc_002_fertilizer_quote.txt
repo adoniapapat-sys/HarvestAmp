@@ -1,0 +1,10 @@
+Synthetic local upload - fertilizer quote
+Supplier: Prairie Ag Retail
+Quote Date: 2026-06-21
+Product: Urea 46-0-0
+Quantity: 24 tons
+Price: $455/ton
+Valid Until: 2026-07-05
+Delivery Fee: missing
+Application Fee: missing
+Notes: Quote only. Does not include agronomic rate, timing, or product selection recommendation.

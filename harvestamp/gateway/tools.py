@@ -750,3 +750,12 @@ class ToolGateway:
             }
 
 
+
+
+# HARVESTAMP_LOCAL_DOCUMENT_EXTRACTION_EXTENSION
+try:
+    from harvestamp.extraction.gateway_extension import register_tool_gateway_extension
+    register_tool_gateway_extension(ToolGateway)
+except Exception:
+    # Keep existing MVP scaffold importable even if optional extraction files are absent.
+    pass

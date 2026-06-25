@@ -1,0 +1,11 @@
+Synthetic local upload - sensitive payment content
+Supplier: River County Fuel Cooperative
+Invoice Date: 2026-06-20
+Product: Dyed diesel
+Gallons: 1000
+Unit Price: $3.60/gallon
+Delivery Fee: $100.00
+Total: $3700.00
+Bank account: 123456789012
+Routing number: 091000019
+Password: superSecret123

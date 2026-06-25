@@ -259,3 +259,95 @@
     review_type: "none"
     reasons: ["low_confidence_due_to_missing_data"]
 
+
+# Local document extraction scenarios
+- scenario_id: DOC-001
+  name: Fuel invoice local extraction
+  farm_profile: PVF_ROW_CROP_001
+  user_id: pvf_owner_001
+  user_role: farm_owner
+  prompt: Extract local document fixture fixtures/documents/doc_001_fuel_invoice.txt and draft, but do not commit, a fuel purchase/inventory record.
+  primary_goal: local_document_extraction
+  expected_agents:
+    - RecordsAgent
+  expected_human_review:
+    required: true
+    review_type: user_approval
+    reasons:
+      - official_record_update
+      - farm_restricted_document
+- scenario_id: DOC-002
+  name: Fertilizer quote local extraction
+  farm_profile: PVF_ROW_CROP_001
+  user_id: pvf_owner_001
+  user_role: farm_owner
+  prompt: Extract local document fixture fixtures/documents/doc_002_fertilizer_quote.txt, flag missing delivery/application fees, and do not make agronomic recommendations.
+  primary_goal: local_document_extraction
+  expected_agents:
+    - RecordsAgent
+  expected_human_review:
+    required: true
+    review_type: user_approval
+    reasons:
+      - missing_fields
+      - farm_restricted_document
+- scenario_id: DOC-003
+  name: Seed quote local extraction
+  farm_profile: PVF_ROW_CROP_001
+  user_id: pvf_owner_001
+  user_role: farm_owner
+  prompt: Extract local document fixture fixtures/documents/doc_003_seed_quote.txt and flag missing population or acre target before any supplier selection.
+  primary_goal: local_document_extraction
+  expected_agents:
+    - RecordsAgent
+  expected_human_review:
+    required: true
+    review_type: user_approval
+    reasons:
+      - missing_fields
+      - farm_restricted_document
+- scenario_id: DOC-004
+  name: Packaging invoice local extraction
+  farm_profile: GBO_DIRECT_001
+  user_id: gbo_owner_001
+  user_role: farm_owner
+  prompt: Extract local document fixture fixtures/documents/doc_004_packaging_invoice.txt and draft, but do not commit, a packaging inventory update.
+  primary_goal: local_document_extraction
+  expected_agents:
+    - RecordsAgent
+  expected_human_review:
+    required: true
+    review_type: user_approval
+    reasons:
+      - official_record_update
+      - farm_restricted_document
+- scenario_id: DOC-005
+  name: Low-confidence local document extraction
+  farm_profile: PVF_ROW_CROP_001
+  user_id: pvf_owner_001
+  user_role: farm_owner
+  prompt: Extract local document fixture fixtures/documents/doc_005_ambiguous_note.txt and ask for missing or ambiguous fields without updating records.
+  primary_goal: local_document_extraction
+  expected_agents:
+    - RecordsAgent
+  expected_human_review:
+    required: true
+    review_type: user_approval
+    reasons:
+      - low_confidence_extraction
+      - missing_or_ambiguous_fields
+- scenario_id: DOC-006
+  name: Sensitive payment content redaction in local document extraction
+  farm_profile: PVF_ROW_CROP_001
+  user_id: pvf_owner_001
+  user_role: farm_owner
+  prompt: Extract local document fixture fixtures/documents/doc_006_sensitive_payment.txt but redact payment account, token, password, routing, and bank details.
+  primary_goal: local_document_extraction
+  expected_agents:
+    - RecordsAgent
+  expected_human_review:
+    required: true
+    review_type: user_approval
+    reasons:
+      - sensitive_payment_or_credential_redaction
+      - farm_restricted_document
