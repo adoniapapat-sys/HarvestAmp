@@ -309,7 +309,7 @@ def test_pvf_weekly_plan_eia_context_and_evidence():
     ap = supervisor.run_workflow(farm, "pvf_owner_001", "farm_owner", "What should I know about Prairie View Farms this week?", obs)
     
     # 1. PVF weekly plan includes EIA benchmark context as public context only
-    rec = next(r for r in ap["recommendations"] if r["recommendation_type"] == "weekly_plan_pvf")
+    rec = next(r for r in ap["recommendations"] if r["recommendation_type"] == "fuel_watch")
     assert "Public benchmark context: EIA regional diesel price benchmark" in rec["summary"]
     assert "EIA is public benchmark context only" in rec["summary"]
     assert "EIA is public benchmark context only" in rec["recommendation"]

@@ -53,8 +53,15 @@ class RecommendationSynthesizer:
             f_hr = self.hr_policy.evaluate_finding(f, user_role)
             f["human_review"] = f_hr # Update finding
 
+            rec_type = f.get("recommendation_type", finding_topic)
+            
+            # Map title based on recommendation_type or topic
             title = f.get("topic", "General Analysis").replace("_", " ").title()
-            if title == "Weekly Plan Pvf":
+            if rec_type == "fuel_watch":
+                title = "Fuel Watch"
+            elif rec_type == "fertilizer_quote_watch":
+                title = "Fertilizer / Input Quote Watch"
+            elif title == "Weekly Plan Pvf":
                 title = "Fuel and Input Watch"
             elif title == "Weekly Plan Gbo":
                 title = "Packaging and Input Watch"
@@ -73,7 +80,7 @@ class RecommendationSynthesizer:
                 "workflow_id": workflow_id,
                 "urgency": f.get("urgency", "info"),
                 "confidence": f.get("confidence", "high"),
-                "recommendation_type": finding_topic,
+                "recommendation_type": rec_type,
                 "evidence_ids": f.get("evidence_ids", []),
                 "missing_data": f.get("missing_data", []),
                 "human_review_status": f_hr,
