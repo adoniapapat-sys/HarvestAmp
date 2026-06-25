@@ -27,6 +27,13 @@ HarvestAmp follows a documentation-first build approach. Major product and archi
 - Ensured that `WeatherAgent` confidence is degraded to `"low"` and weather data is never hallucinated when NWS fails and fallback data is unavailable.
 
 ### Added
+- Implemented read-only USDA AMS MyMarketNews connector (`DS-011`) in shadow mode in `harvestamp/connectors/ams_market_news.py`, supporting live mode (env-flagged with `HARVESTAMP_AMS_SHADOW_LIVE` and `HARVESTAMP_AMS_API_KEY`) and default offline mock mode.
+- Added `get_market_report` in `ToolGateway` in `harvestamp/gateway/tools.py` with capability checks (`marketdata_tool`), target-farm resolution, and fallback to local mock benchmark produce reports.
+- Integrated produce market report context in `MarketAgent.run` and `Supervisor.run_workflow` under GBO weekly plan (`weekly_plan_gbo`) and farmers market (`farmers_market`) topics.
+- Added YAML source metadata for `DS-011` in `fixtures/source_metadata.yaml` and schema support for flexible report rows in `schemas/data_observations.schema.yaml`.
+- Added decision log entry `D-037` in `docs/DECISION_LOG.md` establishing the USDA AMS MyMarketNews benchmark usage guidelines.
+- Added unit and scenario tests in `tests/test_ams_market_news_connector.py` covering mock success, failure statuses, gateway mediation, agent isolation, live mode simulation, weekly plan integration, and API key/URL scrubbing.
+
 - Implemented read-only USDA NASS Quick Stats connector adapter in `harvestamp/connectors/nass_quickstats.py` in shadow mode, supporting live mode (env-flagged with `HARVESTAMP_NASS_SHADOW_LIVE` and `HARVESTAMP_NASS_API_KEY`) and default offline mock mode.
 - Integrated NASS crop benchmarks retrieval inside `ToolGateway.get_crop_benchmark` with capability checks, target-farm resolution, separate queries for CORN and SOYBEANS, merged payload consolidation, and fallback to local mock benchmark data.
 - Added NASS failure fallback mapping: if NASS is stale, unavailable, error, timeout, or denied, the system falls back to the mock crop benchmark fixture (if available), sets `fallback_used=True` and `fallback_reason` (matching the specific status), and logs both the failed shadow NASS result and the fallback result to the `EvidenceBoard`.

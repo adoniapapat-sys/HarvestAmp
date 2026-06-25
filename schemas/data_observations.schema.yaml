@@ -60,6 +60,11 @@ properties:
               yield_county_bushels_per_acre: { type: number }
               yield_state_bushels_per_acre: { type: number }
               acreage_state_acres: { type: number }
+        reports:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties: true
   irrigation_schedules:
     type: object
     additionalProperties:

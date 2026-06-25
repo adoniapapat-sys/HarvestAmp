@@ -48,3 +48,11 @@
   freshness_status: "fresh"
   privacy_class: "Public"
   description: "USDA National Agricultural Statistics Service Quick Stats data."
+- source_id: "DS-011"
+  source_name: "USDA AMS MyMarketNews API"
+  source_type: "api"
+  trust_tier: "T1 Official / primary"
+  freshness_status: "fresh"
+  privacy_class: "Public"
+  description: "USDA Agricultural Marketing Service MyMarketNews data."
+

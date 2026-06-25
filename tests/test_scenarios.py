@@ -189,6 +189,17 @@ def test_gbo_002_farmers_market_prep():
     assert "weather adjustments" in rec["summary"].lower()
     assert "expected squash harvest estimate" in rec["missing_data"]
 
+    # Assert GBO-002 internal pack list does not require user approval when no external action exists
+    assert not ap["human_review_status"]["required"]
+    assert ap["human_review_status"]["review_type"] == "none"
+    assert ap["human_review_status"]["status"] == "review_not_required"
+    assert ap["human_review_status"]["reason"] == []
+    assert ap["human_review_status"]["approval_required_before"] == []
+
+    # AMS connector context still appears in GBO-002
+    assert "res_benchmark_ams" in [ev["evidence_id"] for ev in ap["evidence_summary"]]
+    assert "USDA AMS regional produce market report context" in rec["summary"]
+
 def test_pvf_002_diesel_recommendation():
     """PVF-002 returns buy/wait/split diesel recommendation with user_approval required."""
     scen, farm, obs = load_scenario_context("PVF-002")
@@ -204,6 +215,15 @@ def test_pvf_002_diesel_recommendation():
     assert rec["human_review_status"]["required"]
     assert rec["human_review_status"]["review_type"] == "user_approval"
     assert any(act["action_type"] == "supplier_message" for act in ap["proposed_actions"])
+
+    # Confirm PVF-002 still contains no AMS/MyMarketNews/tomato/salad content
+    import json
+    ap_str = json.dumps(ap)
+    assert "res_benchmark_ams" not in ap_str
+    assert "USDA AMS" not in ap_str
+    assert "MyMarketNews" not in ap_str
+    assert "tomato" not in ap_str.lower()
+    assert "salad" not in ap_str.lower()
 
 def test_pvf_004_fertilizer_comparison():
     """PVF-004 calculates fertilizer cost per pound of N and flags missing delivery/application fees."""

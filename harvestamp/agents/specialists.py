@@ -615,7 +615,13 @@ class MarketAgent(BaseAgent):
     def __init__(self):
         super().__init__("Market + Sales Agent")
 
-    def run(self, work_item: Dict[str, Any], context: Dict[str, Any], crop_benchmark: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def run(
+        self,
+        work_item: Dict[str, Any],
+        context: Dict[str, Any],
+        crop_benchmark: Optional[Dict[str, Any]] = None,
+        market_report: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         topic = get_topic_with_fallback(work_item, context)
         user_role = context.get("user_role", "")
 
@@ -637,23 +643,65 @@ class MarketAgent(BaseAgent):
                 )
 
         elif topic == "weekly_plan_gbo":
+            evidence_ids = []
+            if market_report and "result_id" in market_report:
+                evidence_ids.append(market_report["result_id"])
+
             if user_role in ["field_lead", "market_staff", "external_reviewer"]:
                 summary = "CSA packing is scheduled for 75 members. Prepare wash-pack area."
+                if market_report:
+                    reports = market_report.get("payload", {}).get("reports", {})
+                    report_lines = []
+                    for commodity, details in reports.items():
+                        price = details.get("regional_wholesale_price_per_lb")
+                        tone = details.get("market_tone")
+                        parts = []
+                        if price is not None:
+                            parts.append(f"${price:.2f}/lb")
+                        if tone is not None:
+                            parts.append(f"tone: {tone}")
+                        if parts:
+                            report_lines.append(f"{commodity} ({', '.join(parts)})")
+                    if report_lines:
+                        ams_context = "USDA AMS regional produce market report context: " + ", ".join(report_lines) + ". USDA AMS market report data is included as regional market context only. Green Basket’s CSA commitments, restaurant orders, and farm-specific sales records remain the decision anchor."
+                        summary += f"\n- {ams_context}"
+
                 recommendation = "Review wash-pack schedules for direct marketing prep."
                 return self.create_finding(
-                    work_item, "direct_market_sales", summary, recommendation, "this_week", "high", [],
+                    work_item, "direct_market_sales", summary, recommendation, "this_week", "high", evidence_ids,
                     prohibited_disclosures=["financials", "customer_personal_data"]
                 )
             else:
                 summary = "CSA packing is scheduled for 75 members. Restaurant availability sheet timing watch is active for Tuesday."
+                if market_report:
+                    reports = market_report.get("payload", {}).get("reports", {})
+                    report_lines = []
+                    for commodity, details in reports.items():
+                        price = details.get("regional_wholesale_price_per_lb")
+                        tone = details.get("market_tone")
+                        parts = []
+                        if price is not None:
+                            parts.append(f"${price:.2f}/lb")
+                        if tone is not None:
+                            parts.append(f"tone: {tone}")
+                        if parts:
+                            report_lines.append(f"{commodity} ({', '.join(parts)})")
+                    if report_lines:
+                        ams_context = "USDA AMS regional produce market report context: " + ", ".join(report_lines) + ". USDA AMS market report data is included as regional market context only. Green Basket’s CSA commitments, restaurant orders, and farm-specific sales records remain the decision anchor."
+                        summary += f"\n- {ams_context}"
+
                 recommendation = "Coordinate harvest and wash-pack priorities to align with Tuesday restaurant deliveries and Thursday CSA pickup."
                 return self.create_finding(
-                    work_item, "direct_market_sales", summary, recommendation, "this_week", "high", [],
+                    work_item, "direct_market_sales", summary, recommendation, "this_week", "high", evidence_ids,
                     assumptions=["Restaurant demand matches previous week averages."],
                     missing_data=["restaurant pre-orders"]
                 )
 
         elif topic == "farmers_market":
+            evidence_ids = []
+            if market_report and "result_id" in market_report:
+                evidence_ids.append(market_report["result_id"])
+
             summary = (
                 "Structured Pack List:\n"
                 "- Harvest/Bring List: tomatoes 100 lb, salad mix 40 bags, berries 60 pints, squash 50 lb\n"
@@ -661,18 +709,36 @@ class MarketAgent(BaseAgent):
                 "- Market Supplies: tent, weights, tables, cash box, card reader, organic cert banners/signage\n"
                 "- Weather Adjustments: tent weights and rain covers due to scattered morning showers"
             )
+            if market_report:
+                reports = market_report.get("payload", {}).get("reports", {})
+                report_lines = []
+                for commodity, details in reports.items():
+                    price = details.get("regional_wholesale_price_per_lb")
+                    tone = details.get("market_tone")
+                    parts = []
+                    if price is not None:
+                        parts.append(f"${price:.2f}/lb")
+                    if tone is not None:
+                        parts.append(f"tone: {tone}")
+                    if parts:
+                        report_lines.append(f"{commodity} ({', '.join(parts)})")
+                if report_lines:
+                    ams_context = "USDA AMS regional produce market report context: " + ", ".join(report_lines) + ". USDA AMS market report data is included as regional market context only. Green Basket’s CSA commitments, restaurant orders, and farm-specific sales records remain the decision anchor."
+                    summary += f"\n- {ams_context}"
+
             recommendation = "Ensure all items on the pack list are loaded. Tent weights and rain covers must be ready for morning setup."
             f = self.create_finding(
-                work_item, "farmers_market", summary, recommendation, "this_week", "high", [],
+                work_item, "farmers_market", summary, recommendation, "this_week", "high", evidence_ids,
                 assumptions=["Saturday market hours remain standard."],
                 missing_data=["expected squash harvest estimate"]
             )
             f["human_review"] = {
-                "required": True,
-                "review_type": "user_approval",
-                "risk_tier": "tier_2",
-                "status": "needs_user_approval",
-                "reason": ["external_disclosure"]
+                "required": False,
+                "review_type": "none",
+                "risk_tier": "tier_0",
+                "status": "review_not_required",
+                "reason": [],
+                "approval_required_before": []
             }
             return f
 

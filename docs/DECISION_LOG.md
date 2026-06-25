@@ -131,6 +131,7 @@ Any future work, validations, or open questions.
 | D-034 | Implement National Weather Service read-only connector in shadow mode | accepted |
 | D-035 | Implement EIA Fuel Benchmark Connector in Shadow Mode | accepted |
 | D-036 | Use USDA NASS Quick Stats as official regional benchmark context, not farm-specific yield truth | accepted |
+| D-037 | Use USDA AMS MyMarketNews as official market report context, not farm-specific sales truth | accepted |
 
 ---
 
@@ -1320,6 +1321,43 @@ Treating NASS data as public benchmark context rather than farm truth prevents o
 - `ToolGateway` mediates all NASS connector access.
 - `MarginAgent` and `MarketAgent` present NASS as public regional benchmark context only and include a clear warning that NASS does not override farm-specific records.
 - If NASS fails or is stale, the crop benchmark context confidence is marked lower (`"low"`).
+
+## D-037: Use USDA AMS MyMarketNews as official market report context, not farm-specific sales truth
+
+Status: accepted  
+Date: 2026-06-25  
+Owner: Architecture owner / security owner  
+Related docs: `04_DATA_SOURCES.md`, `05_AGENT_CONTRACTS.md`, `08_EVALUATION_TESTS.md`, `10_BUILD_PLAN.md`
+
+### Context
+
+We need to implement a read-only produce market report connector to support direct-market planning for Green Basket Organics. Produce price statistics must be treated as public regional benchmark context, and must not replace farm-specific records (CSA commitments, restaurant orders, actual sales records) or make deterministic pricing recommendations.
+
+### Decision
+
+Implement the USDA AMS MyMarketNews Connector in shadow mode. The connector supports both offline mock mode and live mode (env-flagged with `HARVESTAMP_AMS_SHADOW_LIVE` and `HARVESTAMP_AMS_API_KEY`).
+
+The following rules apply:
+- **Keep AMS as Read-only Context**: Use report findings for regional market context only. Green Basket's CSA commitments, restaurant orders, and farm-specific sales records remain the decision anchor.
+- **Tolerate Missing/Different Fields**: Connector output must tolerate missing or differently named report fields instead of hardcoding tomato/salad mix reports rigidly.
+- **Config-driven Mappings**: AMS report mappings are fixture/config driven using `slug_id`, `slug_name`, `report_title`, `commodity_map`, `market_type`, and `region`.
+- **Connector Mode & Source Labels**:
+  - `USDA AMS MyMarketNews API (live)`
+  - `USDA AMS MyMarketNews Connector (offline mock)`
+  - `Local AMS Market Fixture Fallback`
+- **Do Not Recommend Final Price Changes**: Do not recommend final price changes solely from AMS context, and do not create customer/buyer-facing messages from AMS data without user approval.
+- **Security Check**: API key values and full request URLs containing credentials must never appear in connector results, evidence, ActionPacks, logs, warnings, exceptions, or rendered outputs.
+
+### Rationale
+
+Treating AMS data as public benchmark context rather than farm truth prevents overconfident pricing predictions or overriding farm-specific sales realities. Fallback mechanics ensure the system remains robust during USDA API failures. Mode-based labeling clarifies whether a result represents an offline simulation or a live integration fallback.
+
+### Consequences
+
+- `AMSMarketNewsConnector` returns normalized `ConnectorResult` including `SourceMetadata` without exposing query credentials.
+- `ToolGateway` mediates all AMS connector access.
+- `MarketAgent` presents AMS as public regional benchmark context only and includes a clear warning that AMS does not override farm-specific records.
+- If AMS fails or is stale, the market report context confidence is marked lower.
 
 ---
 
