@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 
 # 1. Agent Finding Fields
 AGENT_FINDING_FIELDS = [
+    "finding_id",
     "agent",
     "lane",
     "finding_type",
@@ -131,6 +132,7 @@ def normalize_agent_finding_contract(finding: Dict[str, Any]) -> Dict[str, Any]:
 
     # Establish structural defaults
     defaults = {
+        "finding_id": None,
         "agent": None,
         "lane": None,
         "finding_type": None,

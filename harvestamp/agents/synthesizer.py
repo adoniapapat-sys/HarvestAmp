@@ -6,6 +6,7 @@ Combines individual AgentFindings and EvidenceItems into a unified ActionPack.
 from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
 from harvestamp.policy.human_review_policy import HumanReviewPolicy
+from harvestamp.core.contracts import normalize_agent_finding_contract, normalize_action_pack_contract
 
 class RecommendationSynthesizer:
     """Consolidates agent findings and evidence into a structured ActionPack."""
@@ -40,7 +41,7 @@ class RecommendationSynthesizer:
             "approval_required_before": []
         }
         
-        findings = [f for f in findings if f is not None]
+        findings = [normalize_agent_finding_contract(f) for f in findings if f is not None]
         for f in findings:
             finding_topic = f.get("topic", "")
             
@@ -882,7 +883,7 @@ class RecommendationSynthesizer:
                     "fallback_reason": ev.get("fallback_reason")
                 })
 
-        return {
+        action_pack = {
             "action_pack_id": action_pack_id,
             "farm_id": farm_id,
             "workflow_id": workflow_id,
@@ -894,3 +895,4 @@ class RecommendationSynthesizer:
             "human_review_status": overall_hr,
             "status": "draft"
         }
+        return normalize_action_pack_contract(action_pack)
