@@ -227,6 +227,46 @@ inventory:
     reorder_threshold: 2.0
     compatible_equipment: "Irrigation system"
     maintenance_criticality: "medium"
+  - item_id: "PVF_INV_GRAIN_SAMPLE_BAGS"
+    item_type: "grain_storage_supply"
+    product_name: "Grain Sample Bags"
+    quantity: 25.0
+    unit: "units"
+    reorder_threshold: 50.0
+    last_updated: "2026-06-21"
+    compatible_workflow: "grain_storage"
+    storage_location: "shop storage"
+    data_quality: "current"
+  - item_id: "PVF_INV_LOAD_TICKET_ENVELOPES"
+    item_type: "harvest_supply"
+    product_name: "Load Ticket Envelopes"
+    quantity: 12.0
+    unit: "units"
+    reorder_threshold: 25.0
+    last_updated: "2026-06-21"
+    compatible_workflow: "harvest_records"
+    storage_location: "office"
+    data_quality: "current"
+  - item_id: "PVF_INV_BIN_LABELS"
+    item_type: "grain_storage_supply"
+    product_name: "Grain Bin Labels"
+    quantity: 8.0
+    unit: "units"
+    reorder_threshold: 10.0
+    last_updated: "2026-06-21"
+    compatible_workflow: "grain_storage"
+    storage_location: "shop storage"
+    data_quality: "current"
+  - item_id: "PVF_INV_BIN_CLEANOUT_SUPPLIES"
+    item_type: "grain_storage_supply"
+    product_name: "Bin Cleanout Supplies"
+    quantity: 1.0
+    unit: "units"
+    reorder_threshold: 2.0
+    last_updated: "2026-06-21"
+    compatible_workflow: "grain_storage"
+    storage_location: "shop storage"
+    data_quality: "current"
 
 quotes:
   - quote_id: "PVF_QUOTE_DIESEL_2026_06_21"

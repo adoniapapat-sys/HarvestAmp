@@ -47,6 +47,11 @@ properties:
     type: string
   maintenance_criticality:
     type: string
+  compatible_workflow:
+    type: string
+  food_safety_relevant:
+    type: boolean
+
 
 
 
