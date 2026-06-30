@@ -103,7 +103,7 @@ def test_gbo_001_weekly_organic_direct_market_plan():
     assert "CSA boxes" in proc_rec["summary"]
     assert "160" in proc_rec["summary"]
     assert "85" in proc_rec["summary"]
-    assert "expected harvest volume" in proc_rec["missing_data"]
+    assert any("expected harvest volume" in item for item in proc_rec["missing_data"])
     
     # 3. Packaging counts, receipt paper low, tent weights check, organic documentation incomplete
     rec_rec = next(r for r in ap["recommendations"] if r["recommendation_type"] == "inventory_records")

@@ -101,6 +101,75 @@ def main():
         print(f"ERROR: data_observations.yaml not found at {obs_path}")
         success = False
 
+    # 6. Validate Harvest Records
+    hrv_path = os.path.join(FIXTURES_DIR, "harvest_records.yaml")
+    if os.path.exists(hrv_path):
+        with open(hrv_path, "r") as f:
+            hrv_data = yaml.safe_load(f)
+        for i, item in enumerate(hrv_data.get("harvest_events", [])):
+            v, e = validate_by_name(item, "harvest_event")
+            if not v:
+                print(f"FAIL: harvest_records.yaml harvest_events[{i}] failed: {e}")
+                success = False
+        for i, item in enumerate(hrv_data.get("yield_records", [])):
+            v, e = validate_by_name(item, "yield_record")
+            if not v:
+                print(f"FAIL: harvest_records.yaml yield_records[{i}] failed: {e}")
+                success = False
+        if success:
+            print("PASS: harvest_records.yaml validated successfully.")
+    else:
+        print(f"ERROR: harvest_records.yaml not found at {hrv_path}")
+        success = False
+
+    # 7. Validate Sales Records
+    sls_path = os.path.join(FIXTURES_DIR, "sales_records.yaml")
+    if os.path.exists(sls_path):
+        with open(sls_path, "r") as f:
+            sls_data = yaml.safe_load(f)
+        for i, item in enumerate(sls_data.get("post_harvest_inventory", [])):
+            v, e = validate_by_name(item, "post_harvest_inventory")
+            if not v:
+                print(f"FAIL: sales_records.yaml post_harvest_inventory[{i}] failed: {e}")
+                success = False
+        for i, item in enumerate(sls_data.get("sales_commitments", [])):
+            v, e = validate_by_name(item, "sales_commitment")
+            if not v:
+                print(f"FAIL: sales_records.yaml sales_commitments[{i}] failed: {e}")
+                success = False
+        for i, item in enumerate(sls_data.get("sales_records", [])):
+            v, e = validate_by_name(item, "sales_record")
+            if not v:
+                print(f"FAIL: sales_records.yaml sales_records[{i}] failed: {e}")
+                success = False
+        if success:
+            print("PASS: sales_records.yaml validated successfully.")
+    else:
+        print(f"ERROR: sales_records.yaml not found at {sls_path}")
+        success = False
+
+    # 8. Validate Grain Records
+    grn_path = os.path.join(FIXTURES_DIR, "grain_records.yaml")
+    if os.path.exists(grn_path):
+        with open(grn_path, "r") as f:
+            grn_data = yaml.safe_load(f)
+        for i, item in enumerate(grn_data.get("grain_load_tickets", [])):
+            v, e = validate_by_name(item, "grain_load_ticket")
+            if not v:
+                print(f"FAIL: grain_records.yaml grain_load_tickets[{i}] failed: {e}")
+                success = False
+        for i, item in enumerate(grn_data.get("grain_bin_inventory", [])):
+            v, e = validate_by_name(item, "grain_bin_inventory")
+            if not v:
+                print(f"FAIL: grain_records.yaml grain_bin_inventory[{i}] failed: {e}")
+                success = False
+        if success:
+            print("PASS: grain_records.yaml validated successfully.")
+    else:
+        print(f"ERROR: grain_records.yaml not found at {grn_path}")
+        success = False
+
+
     if not success:
         print("\nFixture validation failed.")
         sys.exit(1)

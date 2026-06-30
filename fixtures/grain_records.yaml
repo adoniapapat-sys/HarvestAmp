@@ -1,0 +1,61 @@
+# fixtures/grain_records.yaml
+grain_load_tickets:
+  - ticket_id: "PVF_TKT_001"
+    farm_id: "PVF_ROW_CROP_001"
+    field_id: "PVF_FIELD_A"
+    crop: "corn"
+    date: "2026-06-22"
+    gross_quantity: 1000.0
+    unit: "bushels"
+    moisture_percent: 15.5
+    test_weight: 56.0
+    destination: "Bin 1"
+    evidence_id: "res_tkt_PVF_TKT_001"
+    status: "completed"
+
+  - ticket_id: "PVF_TKT_002"
+    farm_id: "PVF_ROW_CROP_001"
+    field_id: "PVF_FIELD_B"
+    crop: "soybeans"
+    date: "2026-06-23"
+    gross_quantity: 500.0
+    unit: "bushels"
+    moisture_percent: 13.0
+    test_weight: 58.0
+    destination: "Bin 2"
+    evidence_id: "res_tkt_PVF_TKT_002"
+    status: "completed"
+
+grain_bin_inventory:
+  - bin_id: "PVF_BIN_001"
+    farm_id: "PVF_ROW_CROP_001"
+    crop: "corn"
+    quantity: 42000.0
+    unit: "bushels"
+    moisture_percent: 15.1
+    last_reconciled: "2026-06-20"
+    reconciliation_status: "reconciled"
+    evidence_id: "res_bin_PVF_BIN_001"
+    status: "active"
+
+  - bin_id: "PVF_BIN_002"
+    farm_id: "PVF_ROW_CROP_001"
+    crop: "soybeans"
+    quantity: 9000.0
+    unit: "bushels"
+    moisture_percent: 13.2
+    last_reconciled: "2026-06-20"
+    reconciliation_status: "reconciled"
+    evidence_id: "res_bin_PVF_BIN_002"
+    status: "active"
+
+  - bin_id: "PVF_BIN_003"
+    farm_id: "PVF_ROW_CROP_001"
+    crop: "corn"
+    quantity: 15000.0
+    unit: "bushels"
+    moisture_percent: 16.5
+    last_reconciled: "2026-06-19"
+    reconciliation_status: "out_of_sync"
+    evidence_id: "res_bin_PVF_BIN_003"
+    status: "draft"

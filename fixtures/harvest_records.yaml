@@ -1,0 +1,106 @@
+# fixtures/harvest_records.yaml
+harvest_events:
+  - harvest_event_id: "GBO_HARV_001"
+    farm_id: "GBO_DIRECT_001"
+    crop: "tomatoes"
+    variety: "Beefsteak"
+    field_or_block: "High Tunnel 1"
+    harvest_date: "2026-06-23"
+    quantity_harvested: 120.0
+    unit: "lbs"
+    marketable_quantity: 100.0
+    cull_quantity: 20.0
+    destination: "Cooler 1"
+    storage_location: "Cooler 1"
+    lot_or_batch: "LOT-TOM-20260623"
+    evidence_id: "res_harv_GBO_HARV_001"
+    organic_record_required: true
+    food_safety_record_required: true
+    status: "completed"
+    
+  - harvest_event_id: "GBO_HARV_002"
+    farm_id: "GBO_DIRECT_001"
+    crop: "salad mix"
+    variety: "Spring Mix"
+    field_or_block: "Field A"
+    harvest_date: "2026-06-24"
+    quantity_harvested: 50.0
+    unit: "bags"
+    marketable_quantity: 48.0
+    cull_quantity: 2.0
+    destination: "Cooler 1"
+    storage_location: "Cooler 1"
+    lot_or_batch: "LOT-SAL-20260624"
+    evidence_id: "res_harv_GBO_HARV_002"
+    organic_record_required: true
+    food_safety_record_required: true
+    status: "completed"
+
+  - harvest_event_id: "GBO_HARV_003"
+    farm_id: "GBO_DIRECT_001"
+    crop: "squash"
+    variety: "Delicata"
+    field_or_block: "Field B"
+    harvest_date: "2026-06-25"
+    quantity_harvested: 80.0
+    unit: "lbs"
+    marketable_quantity: 75.0
+    cull_quantity: 5.0
+    destination: "Cooler 1"
+    storage_location: "Cooler 1"
+    lot_or_batch: "LOT-SQS-20260625"
+    evidence_id: "res_harv_GBO_HARV_003"
+    organic_record_required: true
+    food_safety_record_required: false
+    status: "draft"
+
+yield_records:
+  - yield_record_id: "PVF_YLD_001"
+    farm_id: "PVF_ROW_CROP_001"
+    crop: "corn"
+    field_id: "PVF_FIELD_A"
+    harvested_area_acres: 160.0
+    gross_quantity: 32000.0
+    unit: "bushels"
+    adjusted_quantity: 31200.0
+    moisture_percent: 15.2
+    test_weight: 56.5
+    dockage_or_shrink: 800.0
+    storage_or_delivery: "Bin 1"
+    evidence_id: "res_yld_PVF_YLD_001"
+    missing_fields: []
+    status: "verified"
+
+  - yield_record_id: "PVF_YLD_002"
+    farm_id: "PVF_ROW_CROP_001"
+    crop: "soybeans"
+    field_id: "PVF_FIELD_B"
+    harvested_area_acres: 80.0
+    gross_quantity: 4800.0
+    unit: "bushels"
+    adjusted_quantity: 4700.0
+    moisture_percent: 13.5
+    test_weight: 58.0
+    dockage_or_shrink: 100.0
+    storage_or_delivery: "Bin 2"
+    evidence_id: "res_yld_PVF_YLD_002"
+    missing_fields: []
+    status: "verified"
+
+  - yield_record_id: "PVF_YLD_003"
+    farm_id: "PVF_ROW_CROP_001"
+    crop: "corn"
+    field_id: "PVF_FIELD_C"
+    harvested_area_acres: 120.0
+    gross_quantity: 24000.0
+    unit: "bushels"
+    adjusted_quantity: 24000.0
+    moisture_percent: 17.5
+    test_weight: 54.0
+    dockage_or_shrink: 0.0
+    storage_or_delivery: "Elevator"
+    evidence_id: "res_yld_PVF_YLD_003"
+    missing_fields:
+      - "adjusted_quantity"
+      - "dockage_or_shrink"
+    status: "draft"

@@ -13,11 +13,15 @@ def test_schemas_exist():
         "common_defs", "work_item", "farm_context_package", "agent_finding",
         "evidence_item", "human_review", "action_pack", "audit_event",
         "source_metadata", "connector_result", "recommendation",
-        "farm_profile", "quote", "inventory_item", "scenario"
+        "farm_profile", "quote", "inventory_item", "scenario",
+        "harvest_event", "yield_record", "post_harvest_inventory",
+        "sales_commitment", "sales_record", "grain_load_ticket",
+        "grain_bin_inventory"
     ]
     for name in expected:
         path = os.path.join(SCHEMAS_DIR, f"{name}.schema.yaml")
         assert os.path.exists(path), f"Schema {name} is missing at {path}"
+
 
 def test_farms_profile_validation():
     """Verify PVF and GBO fixtures pass the farm_profile schema validation."""

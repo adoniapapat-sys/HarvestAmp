@@ -1,0 +1,89 @@
+# fixtures/sales_records.yaml
+post_harvest_inventory:
+  - inventory_id: "GBO_PHI_001"
+    farm_id: "GBO_DIRECT_001"
+    crop_or_item: "tomatoes"
+    quantity_available: 100.0
+    unit: "lbs"
+    storage_location: "Cooler 1"
+    lot_or_batch: "LOT-TOM-20260623"
+    committed_quantity: 80.0
+    uncommitted_quantity: 20.0
+    quality_grade: "A"
+    shelf_life_watch: false
+    evidence_id: "res_phi_GBO_PHI_001"
+    status: "available"
+
+  - inventory_id: "GBO_PHI_002"
+    farm_id: "GBO_DIRECT_001"
+    crop_or_item: "salad mix"
+    quantity_available: 48.0
+    unit: "bags"
+    storage_location: "Cooler 1"
+    lot_or_batch: "LOT-SAL-20260624"
+    committed_quantity: 45.0
+    uncommitted_quantity: 3.0
+    quality_grade: "A"
+    shelf_life_watch: true
+    evidence_id: "res_phi_GBO_PHI_002"
+    status: "available"
+
+sales_commitments:
+  - sales_commitment_id: "GBO_COM_001"
+    farm_id: "GBO_DIRECT_001"
+    channel: "CSA"
+    customer_type: "subscriber"
+    customer_name: "CSA Members (75)"
+    delivery_or_pickup_date: "2026-06-25"
+    items:
+      - crop_or_item: "salad mix"
+        quantity: 75.0
+        unit: "bags"
+    status: "pending"
+    external_message_required: false
+    evidence_id: "res_com_GBO_COM_001"
+
+  - sales_commitment_id: "GBO_COM_002"
+    farm_id: "GBO_DIRECT_001"
+    channel: "restaurant"
+    customer_type: "wholesale"
+    customer_name: "Green Bistro"
+    delivery_or_pickup_date: "2026-06-26"
+    items:
+      - crop_or_item: "tomatoes"
+        quantity: 50.0
+        unit: "lbs"
+      - crop_or_item: "salad mix"
+        quantity: 10.0
+        unit: "bags"
+    status: "pending"
+    external_message_required: true
+    evidence_id: "res_com_GBO_COM_002"
+
+sales_records:
+  - sales_record_id: "GBO_SAL_001"
+    farm_id: "GBO_DIRECT_001"
+    channel: "farmers_market"
+    sale_date: "2026-06-20"
+    items:
+      - crop_or_item: "squash"
+        quantity: 80.0
+        unit: "lbs"
+        price_per_unit: 4.0
+      - crop_or_item: "salad mix"
+        quantity: 35.0
+        unit: "bags"
+        price_per_unit: 5.0
+    gross_sales: 495.0
+    payment_status: "partially_reconciled"
+    returned_inventory:
+      - crop_or_item: "squash"
+        quantity: 20.0
+        unit: "lbs"
+      - crop_or_item: "salad mix"
+        quantity: 5.0
+        unit: "bags"
+    missing_fields: []
+    evidence_id: "res_sal_GBO_SAL_001"
+    status: "completed"
+

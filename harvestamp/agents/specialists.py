@@ -322,9 +322,16 @@ class ProcurementAgent(BaseAgent):
                 return [f_fuel, f_fert]
 
         elif topic == "weekly_plan_gbo":
-            if user_role in ["field_lead", "market_staff", "external_reviewer"]:
+            if user_role == "field_employee":
                 summary = "CSA boxes on hand: 110. Pint clamshells on hand: 160. Quart clamshells on hand: 85. Packaging inventory levels indicate potential risk."
-                recommendation = "Supplier quotes and pricing are hidden for your role. Verify counts physically."
+                recommendation = "Verify clamshell counts physically. Manager review needed for box reorders."
+                return self.create_finding(
+                    work_item, "weekly_plan_gbo", summary, recommendation, "info", "high", evidence_ids,
+                    prohibited_disclosures=["supplier_quotes", "financials"]
+                )
+            elif user_role in ["field_lead", "market_staff", "external_reviewer"]:
+                summary = "CSA boxes on hand: 110. Pint clamshells on hand: 160. Quart clamshells on hand: 85. Packaging inventory levels indicate potential risk."
+                recommendation = "Supplier quotes and pricing are hidden for your role. Verify counts physically. Manager review needed for box reorders."
                 return self.create_finding(
                     work_item, "weekly_plan_gbo", summary, recommendation, "high", "high", evidence_ids,
                     prohibited_disclosures=["supplier_quotes", "financials"]
@@ -684,7 +691,7 @@ class MarketAgent(BaseAgent):
                         price = details.get("regional_wholesale_price_per_lb")
                         tone = details.get("market_tone")
                         parts = []
-                        if price is not None:
+                        if price is not None and user_role != "field_employee":
                             parts.append(f"${price:.2f}/lb")
                         if tone is not None:
                             parts.append(f"tone: {tone}")
@@ -794,9 +801,16 @@ class ComplianceAgent(BaseAgent):
                 standard_finding = f
 
         elif topic == "weekly_plan_gbo":
-            if user_role in ["field_lead", "market_staff", "external_reviewer"]:
+            if user_role == "field_employee":
+                summary = "Organic documentation watch: OSP and approved input list status is incomplete or uncertain based on current records."
+                recommendation = "Verify lot labels and sanitize wash-pack lines. Manager review needed for organic input updates."
+                standard_finding = self.create_finding(
+                    work_item, "compliance_records", summary, recommendation, "info", "high", [],
+                    prohibited_disclosures=["certification_records"]
+                )
+            elif user_role in ["field_lead", "market_staff", "external_reviewer"]:
                 summary = "Organic operations safety: ensure wash-pack tools are sanitized."
-                recommendation = "Record sanitization log."
+                recommendation = "Record sanitization log. Manager review needed for organic input updates."
                 standard_finding = self.create_finding(
                     work_item, "compliance_records", summary, recommendation, "info", "high", [],
                     prohibited_disclosures=["certification_records"]

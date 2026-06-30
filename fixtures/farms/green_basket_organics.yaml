@@ -49,6 +49,16 @@ users:
       - comment_on_input_records_when_shared
     restrictions:
       - no_default_access
+  - user_id: "gbo_employee_001"
+    name: "Seasonal Field Hand"
+    role: "field_employee"
+    permissions:
+      - view_assigned_tasks
+      - update_harvest_counts
+    restrictions:
+      - cannot_view_full_financials
+      - cannot_approve_external_messages
+      - cannot_change_certification_records
 fields: []
 growing_areas:
   - area_id: "GBO_AREA_FIELD_A"

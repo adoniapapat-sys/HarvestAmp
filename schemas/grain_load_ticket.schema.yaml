@@ -1,0 +1,49 @@
+# schemas/grain_load_ticket.schema.yaml
+$schema: "http://json-schema.org/draft-07/schema#"
+title: GrainLoadTicket
+type: object
+required:
+  - ticket_id
+  - farm_id
+  - field_id
+  - crop
+  - date
+  - gross_quantity
+  - unit
+  - moisture_percent
+  - test_weight
+  - destination
+  - evidence_id
+  - status
+properties:
+  ticket_id:
+    type: string
+  farm_id:
+    type: string
+  field_id:
+    type: string
+  crop:
+    type: string
+  date:
+    type: string
+  gross_quantity:
+    type: number
+    minimum: 0
+  unit:
+    type: string
+  moisture_percent:
+    type: number
+    minimum: 0
+  test_weight:
+    type: number
+    minimum: 0
+  destination:
+    type: string
+  evidence_id:
+    type: string
+  status:
+    type: string
+    enum:
+      - draft
+      - completed
+      - blocked_pending_review

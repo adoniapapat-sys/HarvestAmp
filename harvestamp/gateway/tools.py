@@ -877,8 +877,297 @@ class ToolGateway:
                 "connector_mode": ch_res["connector_mode"]
             }
 
+    def _load_yaml_fixture(self, filename: str) -> Dict[str, Any]:
+        import os
+        import yaml
+        from harvestamp.core.schemas import SCHEMAS_DIR
+        fixtures_dir = os.path.abspath(os.path.join(SCHEMAS_DIR, "..", "fixtures"))
+        path = os.path.join(fixtures_dir, filename)
+        if not os.path.exists(path):
+            return {}
+        with open(path, "r") as f:
+            return yaml.safe_load(f) or {}
 
+    def get_harvest_events(
+        self,
+        capability_grant: Dict[str, Any],
+        requesting_farm_id: str,
+        target_farm_id: str,
+        user_role: str = ""
+    ) -> List[Dict[str, Any]]:
+        if not check_cross_farm_block(requesting_farm_id, target_farm_id):
+            raise PermissionError("Cross-farm data access blocked.")
+        if not self._verify_grant(capability_grant, "records_tool"):
+            raise PermissionError("Unauthorized tool access capability.")
+        
+        data = self._load_yaml_fixture("harvest_records.yaml")
+        raw_events = data.get("harvest_events", [])
+        results = []
+        import copy
+        for item in raw_events:
+            if item.get("farm_id") != target_farm_id:
+                continue
+            item_copy = copy.deepcopy(item)
+            ev_id = item_copy["evidence_id"]
+            if user_role == "field_employee":
+                item_copy["evidence_id"] = "Authorized operational records"
+                ev_id = "Authorized operational records"
+            results.append({
+                "result_id": ev_id,
+                "source_id": "DS-020",
+                "retrieved_at": "2026-06-22T08:00:00-05:00",
+                "freshness_status": "fresh",
+                "trust_tier": "T3 User-entered",
+                "privacy_class": "Farm Confidential",
+                "payload": item_copy,
+                "evidence_reference": item_copy["harvest_event_id"],
+                "timestamp": "2026-06-22T08:00:00-05:00",
+                "farm_id": target_farm_id,
+                "authorization_status": "authorized"
+            })
+        return results
 
+    def get_yield_records(
+        self,
+        capability_grant: Dict[str, Any],
+        requesting_farm_id: str,
+        target_farm_id: str,
+        user_role: str = ""
+    ) -> List[Dict[str, Any]]:
+        if not check_cross_farm_block(requesting_farm_id, target_farm_id):
+            raise PermissionError("Cross-farm data access blocked.")
+        if not self._verify_grant(capability_grant, "records_tool"):
+            raise PermissionError("Unauthorized tool access capability.")
+        
+        data = self._load_yaml_fixture("harvest_records.yaml")
+        raw_records = data.get("yield_records", [])
+        results = []
+        import copy
+        for item in raw_records:
+            if item.get("farm_id") != target_farm_id:
+                continue
+            item_copy = copy.deepcopy(item)
+            ev_id = item_copy["evidence_id"]
+            if user_role == "field_employee":
+                item_copy["evidence_id"] = "Authorized operational records"
+                ev_id = "Authorized operational records"
+            results.append({
+                "result_id": ev_id,
+                "source_id": "DS-026",
+                "retrieved_at": "2026-06-22T08:00:00-05:00",
+                "freshness_status": "fresh",
+                "trust_tier": "T3 User-entered",
+                "privacy_class": "Farm Confidential",
+                "payload": item_copy,
+                "evidence_reference": item_copy["yield_record_id"],
+                "timestamp": "2026-06-22T08:00:00-05:00",
+                "farm_id": target_farm_id,
+                "authorization_status": "authorized"
+            })
+        return results
+
+    def get_post_harvest_inventory(
+        self,
+        capability_grant: Dict[str, Any],
+        requesting_farm_id: str,
+        target_farm_id: str,
+        user_role: str = ""
+    ) -> List[Dict[str, Any]]:
+        if not check_cross_farm_block(requesting_farm_id, target_farm_id):
+            raise PermissionError("Cross-farm data access blocked.")
+        if not self._verify_grant(capability_grant, "records_tool"):
+            raise PermissionError("Unauthorized tool access capability.")
+        
+        data = self._load_yaml_fixture("sales_records.yaml")
+        raw_inv = data.get("post_harvest_inventory", [])
+        results = []
+        import copy
+        for item in raw_inv:
+            if item.get("farm_id") != target_farm_id:
+                continue
+            item_copy = copy.deepcopy(item)
+            ev_id = item_copy["evidence_id"]
+            if user_role == "field_employee":
+                item_copy["evidence_id"] = "Authorized operational records"
+                ev_id = "Authorized operational records"
+            results.append({
+                "result_id": ev_id,
+                "source_id": "DS-021",
+                "retrieved_at": "2026-06-22T08:00:00-05:00",
+                "freshness_status": "fresh",
+                "trust_tier": "T3 User-entered",
+                "privacy_class": "Farm Confidential",
+                "payload": item_copy,
+                "evidence_reference": item_copy["inventory_id"],
+                "timestamp": "2026-06-22T08:00:00-05:00",
+                "farm_id": target_farm_id,
+                "authorization_status": "authorized"
+            })
+        return results
+
+    def get_sales_commitments(
+        self,
+        capability_grant: Dict[str, Any],
+        requesting_farm_id: str,
+        target_farm_id: str,
+        user_role: str = ""
+    ) -> List[Dict[str, Any]]:
+        if not check_cross_farm_block(requesting_farm_id, target_farm_id):
+            raise PermissionError("Cross-farm data access blocked.")
+        if not self._verify_grant(capability_grant, "records_tool"):
+            raise PermissionError("Unauthorized tool access capability.")
+        
+        data = self._load_yaml_fixture("sales_records.yaml")
+        raw_commitments = data.get("sales_commitments", [])
+        results = []
+        import copy
+        for item in raw_commitments:
+            if item.get("farm_id") != target_farm_id:
+                continue
+            item_copy = copy.deepcopy(item)
+            ev_id = item_copy["evidence_id"]
+            if user_role == "field_employee":
+                item_copy["customer_name"] = "[REDACTED customer_name]"
+                item_copy["evidence_id"] = "Authorized operational records"
+                ev_id = "Authorized operational records"
+            results.append({
+                "result_id": ev_id,
+                "source_id": "DS-022",
+                "retrieved_at": "2026-06-22T08:00:00-05:00",
+                "freshness_status": "fresh",
+                "trust_tier": "T3 User-entered",
+                "privacy_class": "Farm Restricted",
+                "payload": item_copy,
+                "evidence_reference": item_copy["sales_commitment_id"],
+                "timestamp": "2026-06-22T08:00:00-05:00",
+                "farm_id": target_farm_id,
+                "authorization_status": "authorized"
+            })
+        return results
+
+    def get_sales_records(
+        self,
+        capability_grant: Dict[str, Any],
+        requesting_farm_id: str,
+        target_farm_id: str,
+        user_role: str = ""
+    ) -> List[Dict[str, Any]]:
+        if not check_cross_farm_block(requesting_farm_id, target_farm_id):
+            raise PermissionError("Cross-farm data access blocked.")
+        if not self._verify_grant(capability_grant, "records_tool"):
+            raise PermissionError("Unauthorized tool access capability.")
+        
+        data = self._load_yaml_fixture("sales_records.yaml")
+        raw_records = data.get("sales_records", [])
+        results = []
+        import copy
+        for item in raw_records:
+            if item.get("farm_id") != target_farm_id:
+                continue
+            item_copy = copy.deepcopy(item)
+            ev_id = item_copy["evidence_id"]
+            if user_role == "field_employee":
+                item_copy["gross_sales"] = 0.0
+                item_copy["payment_status"] = "redacted"
+                item_copy["evidence_id"] = "Authorized operational records"
+                ev_id = "Authorized operational records"
+                for sub_item in item_copy.get("items", []):
+                    if "price_per_unit" in sub_item:
+                        sub_item["price_per_unit"] = 0.0
+            results.append({
+                "result_id": ev_id,
+                "source_id": "DS-023",
+                "retrieved_at": "2026-06-22T08:00:00-05:00",
+                "freshness_status": "fresh",
+                "trust_tier": "T3 User-entered",
+                "privacy_class": "Farm Restricted",
+                "payload": item_copy,
+                "evidence_reference": item_copy["sales_record_id"],
+                "timestamp": "2026-06-22T08:00:00-05:00",
+                "farm_id": target_farm_id,
+                "authorization_status": "authorized"
+            })
+        return results
+
+    def get_grain_load_tickets(
+        self,
+        capability_grant: Dict[str, Any],
+        requesting_farm_id: str,
+        target_farm_id: str,
+        user_role: str = ""
+    ) -> List[Dict[str, Any]]:
+        if not check_cross_farm_block(requesting_farm_id, target_farm_id):
+            raise PermissionError("Cross-farm data access blocked.")
+        if not self._verify_grant(capability_grant, "records_tool"):
+            raise PermissionError("Unauthorized tool access capability.")
+        
+        data = self._load_yaml_fixture("grain_records.yaml")
+        raw_tickets = data.get("grain_load_tickets", [])
+        results = []
+        import copy
+        for item in raw_tickets:
+            if item.get("farm_id") != target_farm_id:
+                continue
+            item_copy = copy.deepcopy(item)
+            ev_id = item_copy["evidence_id"]
+            if user_role == "field_employee":
+                if item_copy.get("destination") not in ["Bin 1", "Bin 2", "Bin 3"]:
+                    item_copy["destination"] = "[REDACTED destination]"
+                item_copy["evidence_id"] = "Authorized operational records"
+                ev_id = "Authorized operational records"
+            results.append({
+                "result_id": ev_id,
+                "source_id": "DS-024",
+                "retrieved_at": "2026-06-22T08:00:00-05:00",
+                "freshness_status": "fresh",
+                "trust_tier": "T3 User-entered",
+                "privacy_class": "Farm Confidential",
+                "payload": item_copy,
+                "evidence_reference": item_copy["ticket_id"],
+                "timestamp": "2026-06-22T08:00:00-05:00",
+                "farm_id": target_farm_id,
+                "authorization_status": "authorized"
+            })
+        return results
+
+    def get_grain_bin_inventory(
+        self,
+        capability_grant: Dict[str, Any],
+        requesting_farm_id: str,
+        target_farm_id: str,
+        user_role: str = ""
+    ) -> List[Dict[str, Any]]:
+        if not check_cross_farm_block(requesting_farm_id, target_farm_id):
+            raise PermissionError("Cross-farm data access blocked.")
+        if not self._verify_grant(capability_grant, "records_tool"):
+            raise PermissionError("Unauthorized tool access capability.")
+        
+        data = self._load_yaml_fixture("grain_records.yaml")
+        raw_bins = data.get("grain_bin_inventory", [])
+        results = []
+        import copy
+        for item in raw_bins:
+            if item.get("farm_id") != target_farm_id:
+                continue
+            item_copy = copy.deepcopy(item)
+            ev_id = item_copy["evidence_id"]
+            if user_role == "field_employee":
+                item_copy["evidence_id"] = "Authorized operational records"
+                ev_id = "Authorized operational records"
+            results.append({
+                "result_id": ev_id,
+                "source_id": "DS-025",
+                "retrieved_at": "2026-06-22T08:00:00-05:00",
+                "freshness_status": "fresh",
+                "trust_tier": "T3 User-entered",
+                "privacy_class": "Farm Confidential",
+                "payload": item_copy,
+                "evidence_reference": item_copy["bin_id"],
+                "timestamp": "2026-06-22T08:00:00-05:00",
+                "farm_id": target_farm_id,
+                "authorization_status": "authorized"
+            })
+        return results
 
 
 # HARVESTAMP_LOCAL_DOCUMENT_EXTRACTION_EXTENSION
@@ -888,3 +1177,4 @@ try:
 except Exception:
     # Keep existing MVP scaffold importable even if optional extraction files are absent.
     pass
+

@@ -143,9 +143,14 @@ def main():
     else:
         # GBO Expected Sections
         # 1. Executive summary
-        print_section("Executive summary", "Green Basket Organics Weekly Direct-Market Plan. High tunnel check is recommended for Saturday weather. CSA box reorder is drafted. Late blight watchlist is active.")
-        print_section("Today", "Prepare Saturday market setup materials including tent weights. Submit OSP verification request.")
-        print_section("This week", "Coordinate Tuesday restaurant delivery harvest and Thursday CSA packaging. Update organic documentation.")
+        if args.role == "field_employee":
+            print_section("Executive summary", "Green Basket Organics Weekly Direct-Market Plan. High tunnel check is recommended for Saturday weather. Late blight watchlist is active.")
+            print_section("Today", "Prepare Saturday market setup materials including tent weights.")
+            print_section("This week", "Coordinate Tuesday restaurant delivery harvest and Thursday CSA packaging.")
+        else:
+            print_section("Executive summary", "Green Basket Organics Weekly Direct-Market Plan. High tunnel check is recommended for Saturday weather. CSA box reorder is drafted. Late blight watchlist is active.")
+            print_section("Today", "Prepare Saturday market setup materials including tent weights. Submit OSP verification request.")
+            print_section("This week", "Coordinate Tuesday restaurant delivery harvest and Thursday CSA packaging. Update organic documentation.")
 
         # 2. Market / CSA plan
         r = find_rec_by_title("Direct Market Sales") or find_rec_by_title("Sales")
@@ -155,41 +160,30 @@ def main():
             print_section("Market / CSA plan", "N/A or Hidden")
 
         # 3. Harvest and wash-pack priorities
-        if r:
-            print_section("Harvest and wash-pack priorities", r["summary"], "Coordinate harvest and wash-pack priorities to align with Tuesday restaurant deliveries and Thursday CSA pickup.", r["human_review_status"])
+        r_inv = find_rec_by_title("Inventory Records")
+        if r_inv:
+            print_section("Harvest and wash-pack priorities", r_inv["summary"], "Coordinate harvest and wash-pack priorities to align with Tuesday restaurant deliveries and Thursday CSA pickup.", r_inv["human_review_status"])
         else:
             print_section("Harvest and wash-pack priorities", "N/A or Hidden")
 
         # 4. Packaging inventory
-        r = find_rec_by_title("Packaging")
-        if r:
-            print_section("Packaging inventory", r["summary"], r["recommendation"], r["human_review_status"])
+        r_pack = find_rec_by_title("Packaging") or find_rec_by_title("Packaging and Input Watch")
+        if r_pack:
+            print_section("Packaging inventory", r_pack["summary"], r_pack["recommendation"], r_pack["human_review_status"])
         else:
             print_section("Packaging inventory", "N/A or Hidden")
 
         # 5. Weather / irrigation / high tunnel watch
-        r = find_rec_by_title("Market Day Weather") or find_rec_by_title("Weather")
-        if r:
-            print_section("Weather / irrigation / high tunnel watch", r["summary"], r["recommendation"], r["human_review_status"])
+        r_wtr = find_rec_by_title("Market Day Weather") or find_rec_by_title("Weather")
+        if r_wtr:
+            print_section("Weather / irrigation / high tunnel watch", r_wtr["summary"], r_wtr["recommendation"], r_wtr["human_review_status"])
         else:
             print_section("Weather / irrigation / high tunnel watch", "N/A or Hidden")
 
         # 6. Organic records / input caution
-        r_inv = find_rec_by_title("Inventory Records")
         r_comp = find_rec_by_title("Compliance Records")
-        org_summary = ""
-        org_rec = ""
-        hr_stat = None
-        if r_inv:
-            org_summary += r_inv["summary"] + " "
-            org_rec += r_inv["recommendation"] + " "
-            hr_stat = r_inv["human_review_status"]
         if r_comp:
-            org_summary += r_comp["summary"]
-            org_rec += r_comp["recommendation"]
-            hr_stat = r_comp["human_review_status"]
-        if org_summary:
-            print_section("Organic records / input caution", org_summary.strip(), org_rec.strip(), hr_stat)
+            print_section("Organic records / input caution", r_comp["summary"], r_comp["recommendation"], r_comp["human_review_status"])
         else:
             print_section("Organic records / input caution", "N/A or Hidden")
 
