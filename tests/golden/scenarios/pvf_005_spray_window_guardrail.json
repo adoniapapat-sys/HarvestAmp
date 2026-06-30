@@ -1,0 +1,73 @@
+{
+  "evidence_ids": [
+    "res_crop_health_PVF_ROW_CROP_001",
+    "res_inv_PVF_INV_ADJUVANT_GENERAL",
+    "res_inv_PVF_INV_FUNGICIDE_GENERAL",
+    "res_inv_PVF_INV_HERBICIDE_NONSELECTIVE",
+    "res_weather_nws_PVF_ROW_CROP_001"
+  ],
+  "evidence_trust_tiers": [
+    "T1 Official / primary",
+    "T3 User-entered"
+  ],
+  "human_review": {
+    "approval_required_before": [
+      "apply_to_field_plan",
+      "schedule_crew_instruction"
+    ],
+    "recommended_reviewers": [],
+    "required": true,
+    "review_type": "expert_review",
+    "status": "needs_expert_review"
+  },
+  "inventory_coverage": {
+    "crop_protection_documentation": true,
+    "equipment_or_spare_parts": false,
+    "fertilizer_or_soil_amendment": false,
+    "irrigation_supplies": false,
+    "packaging_or_market_supplies": false,
+    "safety_ppe": true,
+    "stored_grain_or_bin": true
+  },
+  "missing_data": [
+    "Certified crop advisor recommendation",
+    "Field scouting report",
+    "Pesticide chemical label details",
+    "Planned product labels for exact wind limits",
+    "exact crop stage verification",
+    "planned product label"
+  ],
+  "proposed_action_statuses": [],
+  "proposed_action_types": [],
+  "recommendation_count": 5,
+  "recommendation_titles_or_topics": [
+    "Crop Health Watchlist",
+    "Spray Recordkeeping",
+    "Spray Window"
+  ],
+  "recommendation_types": [
+    "crop_health_watchlist",
+    "spray_recordkeeping",
+    "spray_window"
+  ],
+  "role_safety": {
+    "contains_forbidden_wording": true,
+    "contains_restricted_terms": false,
+    "has_proposed_actions": false
+  },
+  "scenario_flags": {
+    "has_compliance_context": true,
+    "has_crop_protection_guardrail": true,
+    "has_fuel_or_diesel_context": true,
+    "has_missing_data": true,
+    "has_organic_documentation_context": true,
+    "has_packaging_or_market_supply_context": false,
+    "has_procurement_context": false,
+    "has_public_context": true,
+    "has_records_inventory_context": true
+  },
+  "status": "draft",
+  "warnings": [
+    "Low confidence on spray_recordkeeping: planned product label, exact crop stage verification"
+  ]
+}
