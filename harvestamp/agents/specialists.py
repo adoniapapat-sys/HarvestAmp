@@ -682,7 +682,11 @@ class ProcurementAgent(BaseAgent):
         user_role = context.get("user_role", "")
         restricted = user_role in {"field_employee", "seasonal_worker", "crew_member", "employee"}
 
-        relevant_types = {"supplier_quote", "supplier_invoice", "fuel_receipt", "packaging_receipt"}
+        relevant_types = {
+            "supplier_quote", "supplier_invoice", "fuel_receipt", "packaging_receipt",
+            "fuel_invoice", "fertilizer_quote", "seed_quote", "packaging_invoice",
+            "general_input_invoice", "unknown"
+        }
         relevant = [d for d in extracted_documents if d.get("document_type") in relevant_types]
         if not relevant:
             return None
@@ -702,7 +706,12 @@ class ProcurementAgent(BaseAgent):
                 # Redact supplier/pricing details for field_employee
                 label = {
                     "supplier_quote": "Read-only quote context available for management review.",
+                    "fertilizer_quote": "Read-only quote context available for management review.",
+                    "seed_quote": "Read-only quote context available for management review.",
                     "supplier_invoice": "Read-only invoice context available for management review.",
+                    "fuel_invoice": "Read-only invoice context available for management review.",
+                    "packaging_invoice": "Read-only invoice context available for management review.",
+                    "general_input_invoice": "Read-only invoice context available for management review.",
                     "fuel_receipt": "Read-only fuel receipt context available for management review.",
                     "packaging_receipt": "Read-only packaging receipt context available for management review.",
                 }.get(doc_type, "Read-only document context available for management review.")
@@ -711,29 +720,27 @@ class ProcurementAgent(BaseAgent):
             else:
                 product = fields.get("product_name", "unknown")
                 supplier = fields.get("supplier_name", "unknown")
-                if doc_type == "supplier_quote":
+                if doc_type in ("supplier_quote", "fertilizer_quote", "seed_quote"):
                     price = fields.get("unit_price", "unknown")
                     context_lines.append(
                         f"Read-only quote context: {supplier} — {product} at ${price}/unit."
                     )
-                elif doc_type == "supplier_invoice":
+                elif doc_type in ("supplier_invoice", "fuel_invoice", "packaging_invoice", "general_input_invoice"):
                     total = fields.get("total_price", "unknown")
                     qty = fields.get("quantity", "unknown")
                     unit = fields.get("unit", "")
                     context_lines.append(
                         f"Read-only invoice context: {supplier} — {product} {qty} {unit}, total ${total}."
                     )
-                elif doc_type == "fuel_receipt":
+                elif doc_type in ("fuel_receipt", "packaging_receipt"):
                     qty = fields.get("quantity", "unknown")
                     unit = fields.get("unit", "")
                     context_lines.append(
                         f"Read-only receipt context: {supplier} — {product} {qty} {unit}."
                     )
-                elif doc_type == "packaging_receipt":
-                    qty = fields.get("quantity", "unknown")
-                    unit = fields.get("unit", "")
+                else:
                     context_lines.append(
-                        f"Read-only receipt context: {supplier} — {product} {qty} {unit}."
+                        f"Read-only document context: {supplier} — {product}."
                     )
                 evidence_ids.append(ev_id)
 
@@ -747,6 +754,12 @@ class ProcurementAgent(BaseAgent):
         # Deduplicate
         evidence_ids = list(dict.fromkeys(evidence_ids))
 
+        overall_confidence = "medium"
+        for doc in relevant:
+            if doc.get("extraction_confidence") == "low" or doc.get("missing_fields"):
+                overall_confidence = "low"
+                break
+
         if restricted:
             disclaimer = "This is read-only document context for review. No task or farm system has been changed."
         else:
@@ -758,7 +771,7 @@ class ProcurementAgent(BaseAgent):
 
         f = self.create_finding(
             work_item, "extracted_document_context", summary, recommendation,
-            "info", "medium", evidence_ids,
+            "info", overall_confidence, evidence_ids,
         )
         if warnings:
             f["missing_data"] = warnings
@@ -1148,6 +1161,12 @@ class RecordsAgent(BaseAgent):
         # Deduplicate
         evidence_ids = list(dict.fromkeys(evidence_ids))
 
+        overall_confidence = "medium"
+        for doc in relevant:
+            if doc.get("extraction_confidence") == "low" or doc.get("missing_fields"):
+                overall_confidence = "low"
+                break
+
         if restricted:
             disclaimer = "This is read-only document context for review. No task or farm system has been changed."
         else:
@@ -1159,7 +1178,7 @@ class RecordsAgent(BaseAgent):
 
         f = self.create_finding(
             work_item, "extracted_document_context", summary, recommendation,
-            "info", "medium", evidence_ids,
+            "info", overall_confidence, evidence_ids,
         )
         if warnings:
             f["missing_data"] = warnings
