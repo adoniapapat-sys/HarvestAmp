@@ -1,4 +1,6 @@
 # harvestamp/agents/compliance.py
+import os
+import yaml
 from typing import Any, Dict, List, Optional
 from harvestamp.agents.specialists import ComplianceAgent
 
@@ -7,13 +9,35 @@ class ComplianceAgent(ComplianceAgent):
         super().__init__()
         self.agent_name = "Compliance Agent"
 
+    def _get_inventory(self, work_item: Dict[str, Any], inventory_arg: Optional[List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
+        if inventory_arg is not None:
+            return inventory_arg
+        farm_id = work_item.get("farm_id")
+        if not farm_id:
+            return []
+        try:
+            filename = "prairie_view_farms.yaml" if "PVF" in farm_id else "green_basket_organics.yaml"
+            path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "fixtures", "farms", filename))
+            if os.path.exists(path):
+                with open(path, "r") as f:
+                    profile = yaml.safe_load(f)
+                    raw_inv = profile.get("inventory", [])
+                    return [{
+                        "result_id": f"res_inv_{item['item_id']}",
+                        "payload": item
+                    } for item in raw_inv]
+        except Exception:
+            pass
+        return []
+
     def run(
         self,
         work_item: Dict[str, Any],
         context: Dict[str, Any],
         crop_health_watchlist: Optional[Dict[str, Any]] = None,
         harvest_events: Optional[List[Dict[str, Any]]] = None,
-        yield_records: Optional[List[Dict[str, Any]]] = None
+        yield_records: Optional[List[Dict[str, Any]]] = None,
+        inventory: Optional[List[Dict[str, Any]]] = None
     ) -> Optional[Dict[str, Any]]:
         topic = work_item.get("topic") or context.get("topic", "")
         user_role = context.get("user_role", "")
@@ -32,6 +56,20 @@ class ComplianceAgent(ComplianceAgent):
             evidence_ids.extend([h["result_id"] for h in harvest_events])
         if yield_records:
             evidence_ids.extend([y["result_id"] for y in yield_records])
+
+        # Load inventory to check PPE stock gaps
+        inventory_items = self._get_inventory(work_item, inventory)
+        low_ppe = []
+        ppe_evidence_ids = []
+        for inv in inventory_items:
+            payload = inv.get("payload", {})
+            if payload.get("item_type") == "safety_ppe":
+                qty = payload.get("quantity")
+                threshold = payload.get("reorder_threshold")
+                name = payload.get("product_name", payload.get("item_id"))
+                if qty is not None and threshold is not None and qty <= threshold:
+                    low_ppe.append(f"{name} ({qty} {payload.get('unit', '')})")
+                    ppe_evidence_ids.append(inv["result_id"])
 
         if topic == "harvest_log_entry":
             # HARV-001/005 GBO compliance
@@ -73,16 +111,23 @@ class ComplianceAgent(ComplianceAgent):
         # Handle list or dict returns from super().run
         if isinstance(finding, list):
             for f in finding:
-                self._append_weekly_compliance(f, topic, user_role, evidence_ids)
+                self._append_weekly_compliance(f, topic, user_role, evidence_ids, low_ppe, ppe_evidence_ids)
             return finding
         else:
-            self._append_weekly_compliance(finding, topic, user_role, evidence_ids)
+            self._append_weekly_compliance(finding, topic, user_role, evidence_ids, low_ppe, ppe_evidence_ids)
             return finding
 
-    def _append_weekly_compliance(self, f: Dict[str, Any], topic: str, user_role: str, evidence_ids: List[str]):
+    def _append_weekly_compliance(self, f: Dict[str, Any], topic: str, user_role: str, evidence_ids: List[str], low_ppe: List[str], ppe_evidence_ids: List[str]):
         if f.get("topic") in ["compliance_general", "compliance_records"]:
             f["topic"] = "compliance_records"
             f["recommendation_type"] = "compliance_records"
+
+        if low_ppe:
+            # Append low PPE stock details strictly as safety readiness context
+            ppe_str = ", ".join(low_ppe)
+            f["summary"] += f"\n- Safety readiness watch: PPE inventory checks show low stock for: {ppe_str}."
+            f["recommendation"] += "\n- Plan to reorder safety PPE to maintain safety readiness."
+            f["evidence_ids"] = list(set(f["evidence_ids"] + ppe_evidence_ids))
 
         if topic == "weekly_plan_pvf":
             if user_role == "field_employee":

@@ -54,7 +54,28 @@ properties:
     type: array
     items:
       type: object
+      required:
+        - item_id
+        - item_type
+        - quantity
+        - unit
+        - last_updated
+      properties:
+        item_id: { type: string }
+        item_type: { type: string }
+        product_name: { type: string }
+        quantity: { type: number }
+        unit: { type: string }
+        last_updated: { type: string }
+        data_quality: { type: string }
+        reorder_threshold: { type: number }
+        storage_location: { type: string }
+        restricted_visibility:
+          type: array
+          items:
+            type: string
   quotes:
     type: array
     items:
       type: object
+

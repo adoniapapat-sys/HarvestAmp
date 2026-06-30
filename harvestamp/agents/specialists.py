@@ -301,9 +301,35 @@ class ProcurementAgent(BaseAgent):
                 
                 urea_cost_n = calculate_fertilizer_cost_per_pound_nitrogen(urea_price, 46)
                 uan_cost_n = calculate_fertilizer_cost_per_pound_nitrogen(uan_price, 32)
+
+                urea_inv = next((inv["payload"] for inv in inventory if inv["payload"].get("product_name") == "Urea"), {})
+                uan_inv = next((inv["payload"] for inv in inventory if inv["payload"].get("product_name") == "UAN 32"), {})
+                urea_qty = urea_inv.get("quantity")
+                uan_qty = uan_inv.get("quantity")
+                urea_thresh = urea_inv.get("reorder_threshold")
+                uan_thresh = uan_inv.get("reorder_threshold")
+
+                stock_context = []
+                is_low_stock = False
+                if urea_qty is not None:
+                    below_str = ""
+                    if urea_thresh is not None and urea_qty <= urea_thresh:
+                        below_str = f" (below threshold {urea_thresh} tons)"
+                        is_low_stock = True
+                    stock_context.append(f"Urea stock is {urea_qty} tons{below_str}")
+                if uan_qty is not None:
+                    below_str = ""
+                    if uan_thresh is not None and uan_qty <= uan_thresh:
+                        below_str = f" (below threshold {uan_thresh} tons)"
+                        is_low_stock = True
+                    stock_context.append(f"UAN 32 stock is {uan_qty} tons{below_str}")
+
+                stock_str = " Current stock status: " + ", ".join(stock_context) + "." if stock_context else ""
                 
-                fert_summary = f"Urea quote at ${urea_price}/ton and UAN 32 quote at ${uan_price}/ton are available, but delivery and application fees are missing. Based on material price only, urea is slightly cheaper per pound of nitrogen (${urea_cost_n:.4f}/lb N) compared to UAN 32 (${uan_cost_n:.4f}/lb N), but fees are missing."
+                fert_summary = f"Urea quote at ${urea_price}/ton and UAN 32 quote at ${uan_price}/ton are available, but delivery and application fees are missing. Based on material price only, urea is slightly cheaper per pound of nitrogen (${urea_cost_n:.4f}/lb N) compared to UAN 32 (${uan_cost_n:.4f}/lb N), but fees are missing.{stock_str}"
                 fert_rec = "Confirm delivery and application fees before ordering."
+                if is_low_stock:
+                    fert_rec += " Consider preparing a draft supplier quote request for owner/manager review due to low stocks."
                 
                 f_fert = self.create_finding(
                     work_item, "weekly_plan_pvf_fertilizer", fert_summary, fert_rec, "medium", "medium", fert_evidence_ids,
@@ -339,6 +365,28 @@ class ProcurementAgent(BaseAgent):
             else:
                 summary = "CSA boxes on hand: 110. Pint clamshells on hand: 160. Quart clamshells on hand: 85. Packaging inventory levels indicate risk for CSA/market planning."
                 recommendation = "Prepare a CSA box reorder for owner approval. Verify clamshell counts and check expected harvest volumes to confirm clamshell needs."
+                
+                org_fert_inv = next((inv["payload"] for inv in inventory if inv["payload"].get("item_id") == "GBO_INV_ORGANIC_FERT"), {})
+                org_fert_quote = next((q["payload"] for q in quotes if q["payload"].get("quote_id") == "GBO_QUOTE_ORGANIC_FERT_2026_06_20"), {})
+                org_fert_qty = org_fert_inv.get("quantity")
+                org_fert_thresh = org_fert_inv.get("reorder_threshold")
+                
+                stock_context = ""
+                is_low_stock = False
+                if org_fert_qty is not None:
+                    below_str = ""
+                    if org_fert_thresh is not None and org_fert_qty <= org_fert_thresh:
+                        below_str = f" (below threshold {org_fert_thresh} bags)"
+                        is_low_stock = True
+                    stock_context = f" GBO Organic Granular Fertilizer stock is {org_fert_qty} bags{below_str}."
+                
+                if org_fert_quote:
+                    price = org_fert_quote.get("price")
+                    unit = org_fert_quote.get("unit")
+                    summary += f" Organic fertilizer quote from {org_fert_quote.get('supplier')} is ${price}/{unit.replace('USD_per_', '') if unit else 'bag'}.{stock_context}"
+                    if is_low_stock:
+                        recommendation += " Consider preparing a draft fertilizer quote inquiry for owner/manager review due to low stock."
+                
                 f = self.create_finding(
                     work_item, "weekly_plan_gbo", summary, recommendation, "high", "medium", evidence_ids,
                     assumptions=["Expected harvest volumes are based on current crop maturity estimates."],
@@ -414,6 +462,30 @@ class ProcurementAgent(BaseAgent):
                 return f
 
         elif topic == "fertilizer_comparison":
+            urea_inv = next((inv["payload"] for inv in inventory if inv["payload"].get("product_name") == "Urea"), {})
+            uan_inv = next((inv["payload"] for inv in inventory if inv["payload"].get("product_name") == "UAN 32"), {})
+            urea_qty = urea_inv.get("quantity")
+            uan_qty = uan_inv.get("quantity")
+            urea_thresh = urea_inv.get("reorder_threshold")
+            uan_thresh = uan_inv.get("reorder_threshold")
+
+            stock_context = []
+            is_low_stock = False
+            if urea_qty is not None:
+                below_str = ""
+                if urea_thresh is not None and urea_qty <= urea_thresh:
+                    below_str = f" (below threshold {urea_thresh} tons)"
+                    is_low_stock = True
+                stock_context.append(f"Urea stock: {urea_qty} tons{below_str}")
+            if uan_qty is not None:
+                below_str = ""
+                if uan_thresh is not None and uan_qty <= uan_thresh:
+                    below_str = f" (below threshold {uan_thresh} tons)"
+                    is_low_stock = True
+                stock_context.append(f"UAN 32 stock: {uan_qty} tons{below_str}")
+
+            stock_str = " Current stock: " + ", ".join(stock_context) + "." if stock_context else ""
+
             urea_quote = next((q["payload"] for q in quotes if q["payload"].get("product_name") == "Urea"), {})
             uan_quote = next((q["payload"] for q in quotes if q["payload"].get("product_name") == "UAN 32"), {})
             
@@ -423,8 +495,11 @@ class ProcurementAgent(BaseAgent):
             urea_cost_n = calculate_fertilizer_cost_per_pound_nitrogen(urea_price, 46)
             uan_cost_n = calculate_fertilizer_cost_per_pound_nitrogen(uan_price, 32)
             
-            summary = f"Urea cost per pound of N is ${urea_cost_n:.4f} (at ${urea_price}/ton). UAN 32 cost per pound of N is ${uan_cost_n:.4f} (at ${uan_price}/ton). Based on material price only, urea appears slightly cheaper per pound of nitrogen, but delivery/application fees and agronomic/timing factors are missing."
+            summary = f"Urea cost per pound of N is ${urea_cost_n:.4f} (at ${urea_price}/ton). UAN 32 cost per pound of N is ${uan_cost_n:.4f} (at ${uan_price}/ton). Based on material price only, urea appears slightly cheaper per pound of nitrogen, but delivery/application fees and agronomic/timing factors are missing.{stock_str}"
             recommendation = "Do not purchase Urea yet. Request fertilizer delivery fee, application fee, and verify agronomic rate or timing requirements before deciding."
+            if is_low_stock:
+                recommendation += " Consider preparing a draft fertilizer quote inquiry for owner/manager review due to low stock."
+            
             f = self.create_finding(
                 work_item, "fertilizer_comparison", summary, recommendation, "medium", "medium", evidence_ids,
                 assumptions=["Material prices are accurate before fees."],
@@ -501,18 +576,50 @@ class RecordsAgent(BaseAgent):
         user_role = context.get("user_role", "")
         evidence_ids = [inv["result_id"] for inv in inventory]
 
+        low_stock_fertilizers = []
+        low_stock_ppe = []
+        
+        for inv in inventory:
+            payload = inv.get("payload", {})
+            itype = payload.get("item_type")
+            if itype in ["fertilizer", "soil_amendment", "safety_ppe"]:
+                qty = payload.get("quantity")
+                threshold = payload.get("reorder_threshold")
+                name = payload.get("product_name", payload.get("item_id"))
+                
+                if qty is None:
+                    continue
+                    
+                if threshold is not None and qty <= threshold:
+                    if itype in ["fertilizer", "soil_amendment"]:
+                        low_stock_fertilizers.append(f"{name} ({qty} {payload.get('unit', '')})")
+                    else:
+                        low_stock_ppe.append(f"{name} ({qty} {payload.get('unit', '')})")
 
         if topic == "weekly_plan_pvf":
+            inv_notes = []
+            if low_stock_fertilizers:
+                inv_notes.append(f"Low fertilizer stock watch: {', '.join(low_stock_fertilizers)}.")
+            if low_stock_ppe:
+                inv_notes.append(f"Low safety/PPE stock watch: {', '.join(low_stock_ppe)}.")
+            note_str = " " + " ".join(inv_notes) if inv_notes else ""
+
             if user_role == "field_employee":
-                summary = "Fuel inventory is fresh (last updated 2026-06-21). Crop protection inventory checks: herbicide status is partial, fungicide status is unknown, adjuvant status is low."
+                summary = f"Fuel inventory is fresh (last updated 2026-06-21). Crop protection inventory checks: herbicide status is partial, fungicide status is unknown, adjuvant status is low.{note_str}"
                 recommendation = "Reconcile pesticide application logs and report any adjuvant shortages to management."
+                if low_stock_ppe:
+                    recommendation += " Report low safety/PPE stock to management."
                 return self.create_finding(
                     work_item, "inventory_records", summary, recommendation, "info", "high", evidence_ids,
                     prohibited_disclosures=["stored_grain_records", "financials"]
                 )
             else:
-                summary = "Fuel inventory freshness: fresh (last updated 2026-06-21). Crop-protection inventory gaps: herbicide is partial, fungicide is unknown, adjuvant is low. Stored grain records show 42,000 bushels of corn and 9,000 bushels of soybeans."
+                summary = f"Fuel inventory freshness: fresh (last updated 2026-06-21). Crop-protection inventory gaps: herbicide is partial, fungicide is unknown, adjuvant is low. Stored grain records show 42,000 bushels of corn and 9,000 bushels of soybeans.{note_str}"
                 recommendation = "Verify crop-protection stocks. Schedule reconciliation watch for stored grain records and prepare acreage reporting details."
+                if low_stock_fertilizers:
+                    recommendation += " Reconcile fertilizer counts and verify purchase quote inquiry details."
+                if low_stock_ppe:
+                    recommendation += " Plan to reorder safety/PPE gear."
                 return self.create_finding(
                     work_item, "inventory_records", summary, recommendation, "info", "high", evidence_ids,
                     assumptions=["Stored grain inventory remains unchanged since last elevator report."],
@@ -520,16 +627,29 @@ class RecordsAgent(BaseAgent):
                 )
 
         elif topic == "weekly_plan_gbo":
+            inv_notes = []
+            if low_stock_fertilizers:
+                inv_notes.append(f"Low fertilizer/soil amendment stock watch: {', '.join(low_stock_fertilizers)}.")
+            if low_stock_ppe:
+                inv_notes.append(f"Low safety/PPE stock watch: {', '.join(low_stock_ppe)}.")
+            note_str = " " + " ".join(inv_notes) if inv_notes else ""
+
             if user_role in ["field_lead", "market_staff", "external_reviewer"]:
-                summary = "Packaging inventory counts: CSA boxes 110, pint clamshells 160, quart clamshells 85. Operational supplies: receipt paper status is low, tent weights status needs check."
+                summary = f"Packaging inventory counts: CSA boxes 110, pint clamshells 160, quart clamshells 85. Operational supplies: receipt paper status is low, tent weights status needs check.{note_str}"
                 recommendation = "Perform physical count of clamshells and verify tent weights before Saturday market."
+                if low_stock_ppe:
+                    recommendation += " Report low safety/PPE stock to management."
                 return self.create_finding(
                     work_item, "inventory_records", summary, recommendation, "info", "high", evidence_ids,
                     prohibited_disclosures=["certification_records", "financials"]
                 )
             else:
-                summary = "Packaging inventory counts: CSA boxes 110, pint clamshells 160, quart clamshells 85. Operational supplies: receipt paper status is low, tent weights status needs check. Organic documentation completeness status is incomplete."
+                summary = f"Packaging inventory counts: CSA boxes 110, pint clamshells 160, quart clamshells 85. Operational supplies: receipt paper status is low, tent weights status needs check. Organic documentation completeness status is incomplete.{note_str}"
                 recommendation = "Update organic documentation and complete approved input verification records. Order receipt paper and check tent weights."
+                if low_stock_fertilizers:
+                    recommendation += " Plan to reorder fertilizer/soil amendments."
+                if low_stock_ppe:
+                    recommendation += " Plan to reorder safety/PPE gear."
                 return self.create_finding(
                     work_item, "inventory_records", summary, recommendation, "info", "high", evidence_ids,
                     assumptions=["CSA pickup requires standard packaging inventory."],
