@@ -21,7 +21,7 @@ properties:
     type: string
   document_type:
     type: string
-    enum: [fuel_invoice, fertilizer_quote, seed_quote, packaging_invoice, general_input_invoice, unknown]
+    enum: [fuel_invoice, fertilizer_quote, seed_quote, packaging_invoice, general_input_invoice, supplier_quote, supplier_invoice, fuel_receipt, packaging_receipt, harvest_load_ticket, inventory_count_sheet, unknown]
   source_name:
     type: string
   source_file_reference:

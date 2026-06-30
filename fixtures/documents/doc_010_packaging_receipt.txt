@@ -1,0 +1,8 @@
+Supplier: Market Pack Supply
+Date: 2026-06-25
+Product: Pint Clamshells
+Packaging Receipt
+Quantity: 50
+Unit: cases
+Unit Price: 18.00
+Total: 900.00

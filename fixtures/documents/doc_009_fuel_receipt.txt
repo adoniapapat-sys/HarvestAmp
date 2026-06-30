@@ -1,0 +1,8 @@
+Supplier: River County Fuel
+Date: 2026-06-25
+Product: dyed diesel
+Fuel Receipt
+Quantity: 500
+Unit: gallons
+Unit Price: 3.65
+Total: 1825.00
