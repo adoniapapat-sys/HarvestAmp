@@ -71,6 +71,52 @@ class ComplianceAgent(ComplianceAgent):
                     low_ppe.append(f"{name} ({qty} {payload.get('unit', '')})")
                     ppe_evidence_ids.append(inv["result_id"])
 
+        cp_gaps = []
+        cp_evidence_ids = []
+        needs_expert = False
+        expert_reasons = []
+        blockers = []
+        
+        # Only check crop-protection inventory gaps on relevant crop-protection or weekly plan topics
+        if topic in ["weekly_plan_pvf", "weekly_plan_gbo", "organic_input_verification", "spray_window"]:
+            for inv in inventory_items:
+                payload = inv.get("payload", {})
+                itype = payload.get("item_type")
+                if itype in ["herbicide", "fungicide", "adjuvant", "biological_control", "insecticide", "crop_protection"]:
+                    name = payload.get("product_name", payload.get("item_id"))
+                    
+                    # Check for missing documentation
+                    gaps = []
+                    if payload.get("label_on_file") is False:
+                        gaps.append("label")
+                    if payload.get("sds_on_file") is False:
+                        gaps.append("SDS")
+                    if payload.get("organic_documentation_on_file") is False:
+                        gaps.append("organic documentation")
+                        
+                    if gaps:
+                        cp_gaps.append(f"{name} has {', '.join(gaps)} documentation gaps requiring qualified review")
+                        needs_expert = True
+                        expert_reasons.append("crop_protection_documentation_gap")
+                        blockers.append(f"resolve_{payload.get('item_id')}_documentation")
+                        cp_evidence_ids.append(inv["result_id"])
+                        
+                    # Check for restricted use flag
+                    if payload.get("restricted_use_flag") is True:
+                        cp_gaps.append(f"{name} is flagged as restricted-use and requires qualified review")
+                        needs_expert = True
+                        expert_reasons.append("restricted_use_review")
+                        blockers.append(f"verify_{payload.get('item_id')}_restricted_use")
+                        cp_evidence_ids.append(inv["result_id"])
+                        
+                    # Check for licensed applicator
+                    if payload.get("licensed_applicator_required") is True:
+                        cp_gaps.append(f"{name} is flagged as requiring a licensed applicator and requires qualified review")
+                        needs_expert = True
+                        expert_reasons.append("applicator_license_review")
+                        blockers.append(f"verify_{payload.get('item_id')}_licensing")
+                        cp_evidence_ids.append(inv["result_id"])
+
         if topic == "harvest_log_entry":
             # HARV-001/005 GBO compliance
             summary = "Organic compliance: organic harvest records are required for tomatoes and salad mix. Squash harvest log is in draft status, with food safety record flag set to false."
@@ -111,13 +157,26 @@ class ComplianceAgent(ComplianceAgent):
         # Handle list or dict returns from super().run
         if isinstance(finding, list):
             for f in finding:
-                self._append_weekly_compliance(f, topic, user_role, evidence_ids, low_ppe, ppe_evidence_ids)
+                self._append_weekly_compliance(f, topic, user_role, evidence_ids, low_ppe, ppe_evidence_ids, cp_gaps, cp_evidence_ids, needs_expert, expert_reasons, blockers)
             return finding
         else:
-            self._append_weekly_compliance(finding, topic, user_role, evidence_ids, low_ppe, ppe_evidence_ids)
+            self._append_weekly_compliance(finding, topic, user_role, evidence_ids, low_ppe, ppe_evidence_ids, cp_gaps, cp_evidence_ids, needs_expert, expert_reasons, blockers)
             return finding
 
-    def _append_weekly_compliance(self, f: Dict[str, Any], topic: str, user_role: str, evidence_ids: List[str], low_ppe: List[str], ppe_evidence_ids: List[str]):
+    def _append_weekly_compliance(
+        self,
+        f: Dict[str, Any],
+        topic: str,
+        user_role: str,
+        evidence_ids: List[str],
+        low_ppe: List[str],
+        ppe_evidence_ids: List[str],
+        cp_gaps: List[str],
+        cp_evidence_ids: List[str],
+        needs_expert: bool,
+        expert_reasons: List[str],
+        blockers: List[str]
+    ):
         if f.get("topic") in ["compliance_general", "compliance_records"]:
             f["topic"] = "compliance_records"
             f["recommendation_type"] = "compliance_records"
@@ -128,6 +187,40 @@ class ComplianceAgent(ComplianceAgent):
             f["summary"] += f"\n- Safety readiness watch: PPE inventory checks show low stock for: {ppe_str}."
             f["recommendation"] += "\n- Plan to reorder safety PPE to maintain safety readiness."
             f["evidence_ids"] = list(set(f["evidence_ids"] + ppe_evidence_ids))
+
+        if cp_gaps:
+            # Append crop protection gaps strictly as review context
+            f["summary"] += f"\n- Safety watch: Crop-protection inventory has documentation gaps requiring qualified review before use decisions: {', '.join(cp_gaps)}."
+            f["recommendation"] += "\n- Route for qualified review and resolve label/SDS/organic documentation gaps. Restricted-use or applicator-license flags require qualified review. This is documentation context only and not treatment, product, rate, tank-mix, or timing advice."
+            f["evidence_ids"] = list(set(f["evidence_ids"] + cp_evidence_ids))
+
+            # Only set or modify human_review if the original finding already has human_review
+            # AND f["human_review"]["required"] is True.
+            if needs_expert and f.get("human_review") and f["human_review"].get("required"):
+                orig_review_type = f["human_review"].get("review_type", "user_approval")
+                
+                # If the original review type is expert_review, or if it is organic_input_verification/spray_window, we use expert_review.
+                # Otherwise, if the original review type is user_approval (like weekly_plan_pvf), we preserve user_approval!
+                if orig_review_type == "expert_review" or topic in ["organic_input_verification", "spray_window"]:
+                    f["human_review"] = {
+                        "required": True,
+                        "review_type": "expert_review",
+                        "risk_tier": "tier_3",
+                        "status": "needs_expert_review",
+                        "reason": list(set(f["human_review"].get("reason", []) + expert_reasons)),
+                        "approval_required_before": list(set(f["human_review"].get("approval_required_before", []) + blockers)),
+                        "recommended_reviewer": ["certified_crop_advisor", "farm_owner"]
+                    }
+                else:
+                    # Preserve user_approval (e.g. for weekly_plan_pvf)
+                    f["human_review"] = {
+                        "required": True,
+                        "review_type": "user_approval",
+                        "risk_tier": "tier_2",
+                        "status": "needs_user_approval",
+                        "reason": list(set(f["human_review"].get("reason", []) + expert_reasons)),
+                        "approval_required_before": list(set(f["human_review"].get("approval_required_before", []) + blockers))
+                    }
 
         if topic == "weekly_plan_pvf":
             if user_role == "field_employee":
