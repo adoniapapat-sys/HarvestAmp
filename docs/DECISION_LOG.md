@@ -134,6 +134,8 @@ Any future work, validations, or open questions.
 | D-037 | Use USDA AMS MyMarketNews as official market report context, not farm-specific sales truth | accepted |
 | D-038 | Use Crop Health Watchlist as read-only shadow/watchlist context, not treatment advice | accepted |
 | D-039 | Make specialist agents explicit and align weekly plan outputs with the Grand Plan sections | accepted |
+| D-040 | Expand Harvest, Yield, Post-Harvest Inventory, and Sales domain coverage | accepted |
+| D-041 | Establish Acceptance and Weekly Plan Human Review Validation Gates | accepted |
 
 ---
 
@@ -1628,6 +1630,54 @@ To satisfy the first vertical slice alignment of the Grand Plan, specialist agen
 ### Consequences
 
 The weekly action plan outputs are fully structured and consistent with the Grand Plan expectations, and agent boundaries are cleanly defined and exposed.
+
+
+## D-040: Expand Harvest, Yield, Post-Harvest Inventory, and Sales domain coverage
+
+Status: accepted
+Date: 2026-06-29
+Owner: Domain Lead
+Related docs: `02_AGENT_ARCHITECTURE.md`, `04_DATA_SOURCES.md`
+
+### Context
+
+To fill the missing harvest-time workflow for Prairie View Farms (PVF) and Green Basket Organics (GBO), we must support harvest events, yield records, post-harvest inventories, sales commitments, sales records, grain load tickets, and grain bin inventories.
+
+### Decision
+
+1. **Schemas & Constraints**: Added seven new schemas with required minimum: 0 bounds, enum-constrained statuses, and custom domain validation relations.
+2. **Gateway Loaders**: Added data loading routines to `ToolGateway` that filter by target farm and apply custom role-based redactions for field employees.
+3. **Agent Overrides**: Implemented specific business logic overrides in the named agent modules (`RecordsInventoryAgent`, `MarketSalesAgent`, `ComplianceAgent`, and `MarginScenarioAgent`).
+4. **Safety & Policy Guidelines**: Stored grain remains scenario-only (no sales or hedge advice), and official records or inventory updates are marked "draft/blocked pending review".
+
+### Consequences
+
+The system supports the full harvest-time workflow safely and securely across both farm profiles, with role-based safety gates active.
+
+
+## D-041: Establish Acceptance and Weekly Plan Human Review Validation Gates
+
+Status: accepted
+Date: 2026-06-29
+Owner: Security & Risk Lead
+Related docs: `06_RISK_AND_HUMAN_REVIEW_POLICY.md`, `02_AGENT_ARCHITECTURE.md`
+
+### Context
+
+To satisfy harvest-time acceptance validation, the supervisor and agents must automatically draft proposed actions, aggregate specific human review reasons, avoid missing-data contradictions, flag grain mismatches, de-duplicate weekly plan sections, and verify employee redactions for both Prairie View Farms and Green Basket Organics.
+
+### Decision
+
+1. **Automatic Proposed Actions**: Integrated weekly plan scanners to automatically draft proposed actions (`draft_inventory_reconciliation`, `draft_official_record_update`, `draft_bin_reconciliation`, `draft_cooler_inventory_update`, `draft_sales_record_reconciliation`) when weekly summaries mention draft/blocked status.
+2. **Domain-Specific Reasons**: Standardized human review reasons list: `draft_cooler_inventory_update`, `harvest_record_review`, `post_harvest_inventory_review`, `grain_bin_reconciliation`, `yield_record_review`, `production_record_caution`, `sales_record_reconciliation`, `food_safety_record_review`.
+3. **Corn Variance Warning**: Configured `RecordsInventoryAgent` to compare PVF gross yield records (56,000 bu) and bin inventories (57,000 bu) and print a mismatch warning.
+4. **GBO Weekly De-duplication**: Focused Market / CSA plan findings on obligations/commitments, while routing cooler stock/shortfalls to Wash-Pack priorities.
+5. **Employee Redactions**: Hidden customer names, pricing, sales totals, payment status, margins, and unpaid invoices in GBO weekly plans for `field_employee`. Added unit tests verifying these constraints.
+
+### Consequences
+
+Scenarios and weekly plans are robustly validated, secure, and fully consistent with role access privileges.
+
 
 
 

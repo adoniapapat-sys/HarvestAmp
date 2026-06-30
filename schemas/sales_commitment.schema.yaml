@@ -1,0 +1,55 @@
+# schemas/sales_commitment.schema.yaml
+$schema: "http://json-schema.org/draft-07/schema#"
+title: SalesCommitment
+type: object
+required:
+  - sales_commitment_id
+  - farm_id
+  - channel
+  - customer_type
+  - customer_name
+  - delivery_or_pickup_date
+  - items
+  - status
+  - external_message_required
+  - evidence_id
+properties:
+  sales_commitment_id:
+    type: string
+  farm_id:
+    type: string
+  channel:
+    type: string
+  customer_type:
+    type: string
+  customer_name:
+    type: string
+  delivery_or_pickup_date:
+    type: string
+  items:
+    type: array
+    items:
+      type: object
+      required:
+        - crop_or_item
+        - quantity
+        - unit
+      properties:
+        crop_or_item:
+          type: string
+        quantity:
+          type: number
+          minimum: 0
+        unit:
+          type: string
+  status:
+    type: string
+    enum:
+      - draft
+      - fulfilled
+      - pending
+      - blocked_pending_review
+  external_message_required:
+    type: boolean
+  evidence_id:
+    type: string

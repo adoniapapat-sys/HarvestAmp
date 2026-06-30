@@ -60,6 +60,33 @@ class Supervisor:
                 return "irrigation_request"
             else:
                 return "irrigation_advisory"
+
+        # Harvest logs, yields, and crop-insurance cautions routing
+        if "log tomato harvest" in prompt_l or "harvest log" in prompt_l:
+            return "harvest_log_entry"
+        if "csa packout" in prompt_l:
+            return "csa_packout_check"
+        if "restaurant order fulfillment" in prompt_l or "restaurant fulfillment" in prompt_l:
+            return "restaurant_fulfillment_check"
+        if "returned inventory" in prompt_l or "farmers market pack list" in prompt_l or "reconcile farmers market" in prompt_l:
+            return "farmers_market_reconciliation"
+        if "harvest shrink" in prompt_l or "cull" in prompt_l:
+            return "harvest_shrink_tracking"
+        if "sales record reconciliation" in prompt_l or "payment status" in prompt_l or "invoice payment status" in prompt_l:
+            return "sales_reconciliation_check"
+        if "load ticket" in prompt_l or "intake prairie view" in prompt_l:
+            return "load_ticket_intake"
+        if "yield summary" in prompt_l or "field-level yield" in prompt_l:
+            return "field_yield_summary"
+        if "bin inventory reconciliation" in prompt_l or "bin reconciliation" in prompt_l:
+            return "bin_reconciliation"
+        if "elevator delivery" in prompt_l or "settlement draft" in prompt_l:
+            return "elevator_delivery_draft"
+        if "stored grain sale watch" in prompt_l or "grain sale watch" in prompt_l:
+            return "grain_sale_watch"
+        if "crop insurance" in prompt_l or "production record caution" in prompt_l:
+            return "crop_insurance_caution"
+
         if "diesel" in prompt_l or "fuel" in prompt_l:
             return "diesel_purchase_window"
         if "urea" in prompt_l or "uan 32" in prompt_l or "fertilizer" in prompt_l:
@@ -85,6 +112,7 @@ class Supervisor:
         if farm_type == "small_organic_direct_market":
             return "weekly_plan_gbo"
         return "weekly_plan_pvf"
+
 
     def run_workflow(
         self,
@@ -570,6 +598,67 @@ class Supervisor:
                 crop_health_watchlist_data = res_ch
 
         # Query records_tool if needed
+        harvest_topics = [
+            "harvest_log_entry", "csa_packout_check", "restaurant_fulfillment_check",
+            "farmers_market_reconciliation", "harvest_shrink_tracking", "sales_reconciliation_check",
+            "load_ticket_intake", "field_yield_summary", "bin_reconciliation",
+            "elevator_delivery_draft", "grain_sale_watch", "crop_insurance_caution",
+            "weekly_plan_pvf", "weekly_plan_gbo"
+        ]
+        
+        harvest_events = []
+        yield_records = []
+        post_harvest_inventory = []
+        sales_commitments = []
+        sales_records = []
+        grain_load_tickets = []
+        grain_bin_inventory = []
+
+        if any(topic == t for t in harvest_topics):
+            grant_rec = self.broker.request_capability_grant(farm_profile, user_id, "records_tool")
+            if grant_rec["authorized"]:
+                harvest_events = self.gateway.get_harvest_events(grant_rec, requesting_farm_id, target_farm_id, user_role)
+                yield_records = self.gateway.get_yield_records(grant_rec, requesting_farm_id, target_farm_id, user_role)
+                post_harvest_inventory = self.gateway.get_post_harvest_inventory(grant_rec, requesting_farm_id, target_farm_id, user_role)
+                sales_commitments = self.gateway.get_sales_commitments(grant_rec, requesting_farm_id, target_farm_id, user_role)
+                sales_records = self.gateway.get_sales_records(grant_rec, requesting_farm_id, target_farm_id, user_role)
+                grain_load_tickets = self.gateway.get_grain_load_tickets(grant_rec, requesting_farm_id, target_farm_id, user_role)
+                grain_bin_inventory = self.gateway.get_grain_bin_inventory(grant_rec, requesting_farm_id, target_farm_id, user_role)
+
+                # Add to evidence board
+                harvest_lists = {
+                    "DS-020": (harvest_events, "Harvest Logs Database", "harvest event"),
+                    "DS-026": (yield_records, "Yield Records Database", "yield record"),
+                    "DS-021": (post_harvest_inventory, "Post-Harvest Inventory Database", "post-harvest inventory"),
+                    "DS-022": (sales_commitments, "Sales Commitments Database", "sales commitment"),
+                    "DS-023": (sales_records, "Sales Records Database", "sales record"),
+                    "DS-024": (grain_load_tickets, "Grain Load Tickets Database", "grain load ticket"),
+                    "DS-025": (grain_bin_inventory, "Grain Bin Inventory Database", "grain bin inventory")
+                }
+                for src_id, (records, default_src_name, desc_pfx) in harvest_lists.items():
+                    for rec in records:
+                        s_name = default_src_name
+                        desc = f"Operational record for {desc_pfx}"
+                        if user_role == "field_employee" and src_id in ["DS-022", "DS-023", "DS-024", "DS-025", "DS-026"]:
+                            s_name = "Authorized operational records"
+                            desc = "Authorized operational records"
+                        
+                        # Avoid duplicates on the evidence board
+                        if not any(e["evidence_id"] == rec["result_id"] for e in evidence_board.list_evidence()):
+                            evidence_board.add_evidence(
+                                evidence_id=rec["result_id"],
+                                source_id=src_id,
+                                source_name=s_name,
+                                trust_tier=rec["trust_tier"],
+                                freshness_status=rec["freshness_status"],
+                                privacy_class=rec["privacy_class"],
+                                data_payload=rec["payload"],
+                                description=desc,
+                                timestamp=rec.get("timestamp"),
+                                farm_id=rec.get("farm_id"),
+                                authorization_status=rec.get("authorization_status")
+                            )
+
         if topic in ["diesel_purchase_window", "weekly_plan_pvf", "weekly_plan_gbo", "packaging_reorder", "spray_window", "organic_input_verification"]:
             grant = self.broker.request_capability_grant(farm_profile, user_id, "records_tool")
             if grant["authorized"]:
@@ -646,41 +735,57 @@ class Supervisor:
             append_agent_findings(proc_finding)
 
         # Records Agent
-        if topic in ["weekly_plan_pvf", "weekly_plan_gbo", "packaging_reorder", "spray_window", "organic_input_verification", "irrigation_advisory", "irrigation_request"]:
+        if topic in ["weekly_plan_pvf", "weekly_plan_gbo", "packaging_reorder", "spray_window", "organic_input_verification", "irrigation_advisory", "irrigation_request"] or topic in harvest_topics:
             rec_finding = self.records_agent.run(
                 work_item={"work_item_id": f"wi_re_{user_id}", "workflow_id": workflow_id, "farm_id": target_farm_id, "requesting_user_id": user_id, "user_intent": prompt, "topic": topic},
                 context=context_pkg,
                 inventory=inv_data,
                 irrigation_schedule=irrigation_sched_data,
-                irrigation_request=irrigation_req_data
+                irrigation_request=irrigation_req_data,
+                harvest_events=harvest_events,
+                yield_records=yield_records,
+                post_harvest_inventory=post_harvest_inventory,
+                grain_load_tickets=grain_load_tickets,
+                grain_bin_inventory=grain_bin_inventory
             )
             findings.append(rec_finding)
             
         # Compliance Agent
-        if topic in ["spray_window", "organic_input_verification", "weekly_plan_pvf", "weekly_plan_gbo", "irrigation_advisory", "irrigation_request", "crop_health_watchlist"]:
+        if topic in ["spray_window", "organic_input_verification", "weekly_plan_pvf", "weekly_plan_gbo", "irrigation_advisory", "irrigation_request", "crop_health_watchlist"] or topic in harvest_topics:
             comp_finding = self.compliance_agent.run(
                 work_item={"work_item_id": f"wi_co_{user_id}", "workflow_id": workflow_id, "farm_id": target_farm_id, "requesting_user_id": user_id, "user_intent": prompt, "topic": topic},
                 context=context_pkg,
-                crop_health_watchlist=crop_health_watchlist_data
+                crop_health_watchlist=crop_health_watchlist_data,
+                harvest_events=harvest_events,
+                yield_records=yield_records
             )
             append_agent_findings(comp_finding)
             
         # Market Agent
-        if topic in ["weekly_plan_pvf", "weekly_plan_gbo", "farmers_market"]:
+        if topic in ["weekly_plan_pvf", "weekly_plan_gbo", "farmers_market"] or topic in harvest_topics:
             mkt_finding = self.market_agent.run(
                 work_item={"work_item_id": f"wi_ma_{user_id}", "workflow_id": workflow_id, "farm_id": target_farm_id, "requesting_user_id": user_id, "user_intent": prompt, "topic": topic},
                 context=context_pkg,
                 crop_benchmark=crop_benchmark_data,
-                market_report=market_report_data
+                market_report=market_report_data,
+                sales_commitments=sales_commitments,
+                sales_records=sales_records,
+                post_harvest_inventory=post_harvest_inventory,
+                grain_bin_inventory=grain_bin_inventory,
+                yield_records=yield_records,
+                grain_load_tickets=grain_load_tickets
             )
             findings.append(mkt_finding)
  
         # Margin Agent
-        if topic in ["diesel_purchase_window", "fertilizer_comparison", "weekly_plan_pvf", "packaging_reorder"]:
+        if topic in ["diesel_purchase_window", "fertilizer_comparison", "weekly_plan_pvf", "packaging_reorder"] or topic in harvest_topics:
             mrgn_finding = self.margin_agent.run(
                 work_item={"work_item_id": f"wi_mr_{user_id}", "workflow_id": workflow_id, "farm_id": target_farm_id, "requesting_user_id": user_id, "user_intent": prompt, "topic": topic},
                 context=context_pkg,
-                crop_benchmark=crop_benchmark_data
+                crop_benchmark=crop_benchmark_data,
+                yield_records=yield_records,
+                sales_records=sales_records,
+                harvest_events=harvest_events
             )
             findings.append(mrgn_finding)
  
@@ -697,6 +802,7 @@ class Supervisor:
             action_pack["warnings"].append("Supplier quotes, input pricing, margin, and marketing details are hidden for your role.")
         
         return action_pack
+
 
 
 # HARVESTAMP_LOCAL_DOCUMENT_WORKFLOW_EXTENSION

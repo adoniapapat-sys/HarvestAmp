@@ -1,0 +1,84 @@
+# schemas/sales_record.schema.yaml
+$schema: "http://json-schema.org/draft-07/schema#"
+title: SalesRecord
+type: object
+required:
+  - sales_record_id
+  - farm_id
+  - channel
+  - sale_date
+  - items
+  - gross_sales
+  - payment_status
+  - returned_inventory
+  - missing_fields
+  - evidence_id
+  - status
+properties:
+  sales_record_id:
+    type: string
+  farm_id:
+    type: string
+  channel:
+    type: string
+  sale_date:
+    type: string
+  items:
+    type: array
+    items:
+      type: object
+      required:
+        - crop_or_item
+        - quantity
+        - unit
+      properties:
+        crop_or_item:
+          type: string
+        quantity:
+          type: number
+          minimum: 0
+        unit:
+          type: string
+        price_per_unit:
+          type: number
+          minimum: 0
+  gross_sales:
+    type: number
+    minimum: 0
+  payment_status:
+    type: string
+    enum:
+      - unpaid
+      - partially_reconciled
+      - reconciled
+      - draft
+      - blocked_pending_review
+  returned_inventory:
+    type: array
+    items:
+      type: object
+      required:
+        - crop_or_item
+        - quantity
+        - unit
+      properties:
+        crop_or_item:
+          type: string
+        quantity:
+          type: number
+          minimum: 0
+        unit:
+          type: string
+  missing_fields:
+    type: array
+    items:
+      type: string
+  evidence_id:
+    type: string
+  status:
+    type: string
+    enum:
+      - draft
+      - completed
+      - reconciled
+      - blocked_pending_review

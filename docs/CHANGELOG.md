@@ -17,6 +17,24 @@ HarvestAmp follows a documentation-first build approach. Major product and archi
 
 ## [Unreleased]
 
+### Added
+- Gated proposed actions with dynamic gating metadata (farm_id, record_type, source_evidence_id, and related recommendation/evidence).
+- Added scenario-specific approval blockers: `verify_returned_inventory_quality`, `reconcile_sales_records`, and `commit_to_official_records` for returned inventory (`HARV-004`); `provide_local_bid`, `provide_local_basis`, and `no_sale_recommendation_without_current_farm_authorized_bid_basis` for stored grain watch (`HARV-105`); `provide_field_c_adjusted_quantity` and `provide_field_c_dockage_or_shrink` for yield summary (`HARV-102`).
+- Set recommended reviewers `farm_owner` and `farm_manager` for yield summaries (`HARV-102`).
+- Implemented dynamic primary `source_evidence_id` choices (grain load ticket ID for ticket updates, sales/commitment ID for returns/reconciliations, and yield/ticket ID for elevator settlements).
+- Implemented harvest, yield, post-harvest inventory, sales commitments, sales records, grain load ticket, and grain bin inventory schemas in `schemas/`.
+- Created dedicated YAML fixture files for mock harvest, sales, and grain records in `fixtures/`.
+- Added seven new data query gateway methods to `ToolGateway` in `harvestamp/gateway/tools.py` with custom user-role redaction for field employees.
+- Implemented `RecordsInventoryAgent`, `MarketSalesAgent`, `ComplianceAgent`, and `MarginScenarioAgent` subclass logic overrides in their named agent modules.
+- Extended intent routing in `Supervisor.route_intent` to map scenario prompts `HARV-001` through `HARV-106` to their respective topics.
+- Added comprehensive unit and functional scenario test suites verifying the schema validations, agents math/draft logic, and role-based redactions.
+- Added proposed draft actions scanning for weekly plans and escalated human reviews for cooler inventory, bin inventory, yield records, sales reconciliation, and settlement records.
+- Integrated domain-specific human review reasons (e.g. food_safety_record_review, production_record_caution, yield_record_review, grain_bin_reconciliation, sales_record_reconciliation, harvest_record_review, post_harvest_inventory_review).
+- Flagged possible corn reconciliation variance warnings in Prairie View weekly plans.
+- De-duplicated Green Basket weekly direct market sales (commitments focus) and inventory records (cooler/priorities/shortfalls focus) sections.
+- Redacted GBO weekly plans for field employees and added employee views test verification.
+- De-duplicated and grouped evidence summary records by evidence ID.
+
 ### Changed
 - Re-aligned the weekly plan runner (`scripts/run_weekly_plan.py`) to print the exact Grand Plan sections in order for Prairie View Farms and Green Basket Organics.
 - Refactored mock specialist agent boundaries by adding explicit wrappers: `WeatherFieldworkAgent` in `harvestamp/agents/weather_fieldwork.py`, `ProcurementAgent` in `harvestamp/agents/procurement.py`, `RecordsInventoryAgent` in `harvestamp/agents/records_inventory.py`, `MarketSalesAgent` in `harvestamp/agents/market_sales.py`, `ComplianceAgent` in `harvestamp/agents/compliance.py`, and `MarginScenarioAgent` in `harvestamp/agents/margin_scenario.py`.

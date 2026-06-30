@@ -1,0 +1,63 @@
+# schemas/harvest_event.schema.yaml
+$schema: "http://json-schema.org/draft-07/schema#"
+title: HarvestEvent
+type: object
+required:
+  - harvest_event_id
+  - farm_id
+  - crop
+  - field_or_block
+  - harvest_date
+  - quantity_harvested
+  - unit
+  - marketable_quantity
+  - cull_quantity
+  - destination
+  - storage_location
+  - lot_or_batch
+  - evidence_id
+  - organic_record_required
+  - food_safety_record_required
+  - status
+properties:
+  harvest_event_id:
+    type: string
+  farm_id:
+    type: string
+  crop:
+    type: string
+  variety:
+    type: string
+  field_or_block:
+    type: string
+  harvest_date:
+    type: string
+  quantity_harvested:
+    type: number
+    minimum: 0
+  unit:
+    type: string
+  marketable_quantity:
+    type: number
+    minimum: 0
+  cull_quantity:
+    type: number
+    minimum: 0
+  destination:
+    type: string
+  storage_location:
+    type: string
+  lot_or_batch:
+    type: string
+  evidence_id:
+    type: string
+  organic_record_required:
+    type: boolean
+  food_safety_record_required:
+    type: boolean
+  status:
+    type: string
+    enum:
+      - draft
+      - completed
+      - blocked_pending_review

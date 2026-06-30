@@ -1,0 +1,52 @@
+# schemas/post_harvest_inventory.schema.yaml
+$schema: "http://json-schema.org/draft-07/schema#"
+title: PostHarvestInventory
+type: object
+required:
+  - inventory_id
+  - farm_id
+  - crop_or_item
+  - quantity_available
+  - unit
+  - storage_location
+  - lot_or_batch
+  - committed_quantity
+  - uncommitted_quantity
+  - quality_grade
+  - shelf_life_watch
+  - evidence_id
+  - status
+properties:
+  inventory_id:
+    type: string
+  farm_id:
+    type: string
+  crop_or_item:
+    type: string
+  quantity_available:
+    type: number
+    minimum: 0
+  unit:
+    type: string
+  storage_location:
+    type: string
+  lot_or_batch:
+    type: string
+  committed_quantity:
+    type: number
+    minimum: 0
+  uncommitted_quantity:
+    type: number
+    minimum: 0
+  quality_grade:
+    type: string
+  shelf_life_watch:
+    type: boolean
+  evidence_id:
+    type: string
+  status:
+    type: string
+    enum:
+      - draft
+      - available
+      - blocked_pending_review

@@ -411,3 +411,112 @@
   expected_human_review:
     required: false
     review_type: none
+- scenario_id: "HARV-001"
+  name: Green Basket harvest log entry
+  farm_profile: GBO_DIRECT_001
+  user_id: gbo_owner_001
+  user_role: farm_owner
+  prompt: Log tomato harvest from High Tunnel 1 and update cooler inventory
+  primary_goal: harvest_log_entry
+  expected_agents:
+    - RecordsInventoryAgent
+- scenario_id: "HARV-002"
+  name: Green Basket CSA packout
+  farm_profile: GBO_DIRECT_001
+  user_id: gbo_owner_001
+  user_role: farm_owner
+  prompt: Check if we have enough wash-pack inventory for Wednesday CSA packout of 75 members
+  primary_goal: csa_packout_check
+  expected_agents:
+    - MarketSalesAgent
+- scenario_id: "HARV-003"
+  name: Green Basket restaurant order fulfillment check
+  farm_profile: GBO_DIRECT_001
+  user_id: gbo_owner_001
+  user_role: farm_owner
+  prompt: Perform restaurant order fulfillment check for Tuesday tomatoes and salad mix deliveries
+  primary_goal: restaurant_fulfillment_check
+  expected_agents:
+    - MarketSalesAgent
+- scenario_id: "HARV-004"
+  name: Green Basket farmers market pack list and returned inventory
+  farm_profile: GBO_DIRECT_001
+  user_id: gbo_owner_001
+  user_role: farm_owner
+  prompt: Reconcile farmers market pack list and returned inventory for squash and salad mix
+  primary_goal: farmers_market_reconciliation
+  expected_agents:
+    - MarketSalesAgent
+- scenario_id: "HARV-005"
+  name: Green Basket harvest shrink/cull tracking
+  farm_profile: GBO_DIRECT_001
+  user_id: gbo_owner_001
+  user_role: farm_owner
+  prompt: Track harvest shrink and cull quantities for GBO organic crops
+  primary_goal: harvest_shrink_tracking
+  expected_agents:
+    - RecordsInventoryAgent
+- scenario_id: "HARV-006"
+  name: Green Basket sales record reconciliation
+  farm_profile: GBO_DIRECT_001
+  user_id: gbo_owner_001
+  user_role: farm_owner
+  prompt: "Check sales record reconciliation: cash, card, and unpaid invoice payment status"
+  primary_goal: sales_reconciliation_check
+  expected_agents:
+    - MarketSalesAgent
+- scenario_id: "HARV-101"
+  name: Prairie View corn harvest load ticket intake
+  farm_profile: PVF_ROW_CROP_001
+  user_id: pvf_owner_001
+  user_role: farm_owner
+  prompt: Intake Prairie View corn harvest load ticket and verify scale weight
+  primary_goal: load_ticket_intake
+  expected_agents:
+    - RecordsInventoryAgent
+- scenario_id: "HARV-102"
+  name: Prairie View field-level yield summary
+  farm_profile: PVF_ROW_CROP_001
+  user_id: pvf_owner_001
+  user_role: farm_owner
+  prompt: Compile field-level yield summary for Prairie View corn and soybean crops
+  primary_goal: field_yield_summary
+  expected_agents:
+    - RecordsInventoryAgent
+- scenario_id: "HARV-103"
+  name: Prairie View bin inventory reconciliation
+  farm_profile: PVF_ROW_CROP_001
+  user_id: pvf_owner_001
+  user_role: farm_owner
+  prompt: Perform bin inventory reconciliation check for stored corn and soybeans
+  primary_goal: bin_reconciliation
+  expected_agents:
+    - RecordsInventoryAgent
+- scenario_id: "HARV-104"
+  name: Prairie View elevator delivery / settlement draft record
+  farm_profile: PVF_ROW_CROP_001
+  user_id: pvf_owner_001
+  user_role: farm_owner
+  prompt: Draft elevator delivery and settlement records for soybean crop
+  primary_goal: elevator_delivery_draft
+  expected_agents:
+    - MarketSalesAgent
+- scenario_id: "HARV-105"
+  name: Prairie View stored grain sale watch with missing basis/bid
+  farm_profile: PVF_ROW_CROP_001
+  user_id: pvf_owner_001
+  user_role: farm_owner
+  prompt: Check stored grain sale watch for corn bin inventory
+  primary_goal: grain_sale_watch
+  expected_agents:
+    - MarketSalesAgent
+- scenario_id: "HARV-106"
+  name: Prairie View crop insurance / production record caution
+  farm_profile: PVF_ROW_CROP_001
+  user_id: pvf_owner_001
+  user_role: farm_owner
+  prompt: Flag crop insurance and production record cautions for yield records
+  primary_goal: crop_insurance_caution
+  expected_agents:
+    - ComplianceAgent
+

@@ -1,0 +1,63 @@
+# schemas/yield_record.schema.yaml
+$schema: "http://json-schema.org/draft-07/schema#"
+title: YieldRecord
+type: object
+required:
+  - yield_record_id
+  - farm_id
+  - crop
+  - field_id
+  - harvested_area_acres
+  - gross_quantity
+  - unit
+  - adjusted_quantity
+  - moisture_percent
+  - test_weight
+  - dockage_or_shrink
+  - storage_or_delivery
+  - evidence_id
+  - missing_fields
+  - status
+properties:
+  yield_record_id:
+    type: string
+  farm_id:
+    type: string
+  crop:
+    type: string
+  field_id:
+    type: string
+  harvested_area_acres:
+    type: number
+    minimum: 0
+  gross_quantity:
+    type: number
+    minimum: 0
+  unit:
+    type: string
+  adjusted_quantity:
+    type: number
+    minimum: 0
+  moisture_percent:
+    type: number
+    minimum: 0
+  test_weight:
+    type: number
+    minimum: 0
+  dockage_or_shrink:
+    type: number
+    minimum: 0
+  storage_or_delivery:
+    type: string
+  evidence_id:
+    type: string
+  missing_fields:
+    type: array
+    items:
+      type: string
+  status:
+    type: string
+    enum:
+      - draft
+      - verified
+      - blocked_pending_review

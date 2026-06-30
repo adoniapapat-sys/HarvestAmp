@@ -1,0 +1,48 @@
+# schemas/grain_bin_inventory.schema.yaml
+$schema: "http://json-schema.org/draft-07/schema#"
+title: GrainBinInventory
+type: object
+required:
+  - bin_id
+  - farm_id
+  - crop
+  - quantity
+  - unit
+  - moisture_percent
+  - last_reconciled
+  - reconciliation_status
+  - evidence_id
+  - status
+properties:
+  bin_id:
+    type: string
+  farm_id:
+    type: string
+  crop:
+    type: string
+  quantity:
+    type: number
+    minimum: 0
+  unit:
+    type: string
+  moisture_percent:
+    type: number
+    minimum: 0
+  last_reconciled:
+    type: string
+  reconciliation_status:
+    type: string
+    enum:
+      - reconciled
+      - draft
+      - out_of_sync
+      - blocked_pending_review
+  evidence_id:
+    type: string
+  status:
+    type: string
+    enum:
+      - draft
+      - active
+      - reconciled
+      - blocked_pending_review
