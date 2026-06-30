@@ -74,6 +74,13 @@ properties:
           type: array
           items:
             type: string
+        label_on_file: { type: boolean }
+        sds_on_file: { type: boolean }
+        organic_documentation_on_file: { type: boolean }
+        rei_phi_record_required: { type: boolean }
+        licensed_applicator_required: { type: boolean }
+        restricted_use_flag: { type: boolean }
+
   quotes:
     type: array
     items:

@@ -158,6 +158,20 @@ inventory:
     last_updated: "2026-06-21"
     data_quality: "manual_count"
     reorder_threshold: 6.0
+  - item_id: "GBO_INV_BIOCONTROL_GENERAL"
+    item_type: "biological_control"
+    product_name: "Biological Control Inventory Item"
+    quantity: 2.0
+    unit: "lbs"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+    reorder_threshold: 3.0
+    label_on_file: true
+    sds_on_file: true
+    organic_documentation_on_file: false
+    licensed_applicator_required: false
+    restricted_use_flag: false
+
 quotes:
   - quote_id: "GBO_QUOTE_CLAMSHELLS_2026_06_18"
     supplier: "Local Pack Corp"

@@ -141,6 +141,43 @@ inventory:
     last_updated: "2026-06-21"
     data_quality: "manual_count"
     reorder_threshold: 20.0
+  - item_id: "PVF_INV_HERBICIDE_NONSELECTIVE"
+    item_type: "herbicide"
+    product_name: "Nonselective Herbicide Inventory Item"
+    quantity: 15.0
+    unit: "gallons"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+    reorder_threshold: 20.0
+    label_on_file: true
+    sds_on_file: true
+    licensed_applicator_required: true
+    restricted_use_flag: false
+  - item_id: "PVF_INV_FUNGICIDE_GENERAL"
+    item_type: "fungicide"
+    product_name: "Fungicide Inventory Item"
+    quantity: 4.0
+    unit: "gallons"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+    reorder_threshold: 5.0
+    label_on_file: false
+    sds_on_file: true
+    licensed_applicator_required: true
+    restricted_use_flag: true
+  - item_id: "PVF_INV_ADJUVANT_GENERAL"
+    item_type: "adjuvant"
+    product_name: "Adjuvant Inventory Item"
+    quantity: 8.0
+    unit: "gallons"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+    reorder_threshold: 10.0
+    label_on_file: true
+    sds_on_file: true
+    licensed_applicator_required: false
+    restricted_use_flag: false
+
 quotes:
   - quote_id: "PVF_QUOTE_DIESEL_2026_06_21"
     supplier: "River County Fuel"
