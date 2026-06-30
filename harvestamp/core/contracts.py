@@ -112,7 +112,7 @@ ADVISOR_DRIFT_WORDING = [
 RESTRICTED_FIELD_EMPLOYEE_TERMS = [
     "supplier pricing",
     "quote price",
-    "margin",
+    "operating margin",
     "gross margin",
     "customer financial",
     "payment status",
