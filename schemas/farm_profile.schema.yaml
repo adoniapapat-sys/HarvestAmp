@@ -82,6 +82,8 @@ properties:
         restricted_use_flag: { type: boolean }
         compatible_equipment: { type: string }
         maintenance_criticality: { type: string }
+        compatible_workflow: { type: string }
+        food_safety_relevant: { type: boolean }
 
 
   quotes:

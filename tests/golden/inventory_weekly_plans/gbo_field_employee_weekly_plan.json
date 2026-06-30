@@ -5,7 +5,10 @@
     "res_crop_health_GBO_DIRECT_001",
     "res_inv_GBO_INV_BIOCONTROL_GENERAL",
     "res_inv_GBO_INV_COMPOST",
+    "res_inv_GBO_INV_COOLER_LABELS",
     "res_inv_GBO_INV_CSA_BOXES",
+    "res_inv_GBO_INV_CSA_LINERS",
+    "res_inv_GBO_INV_HARVEST_TOTES",
     "res_inv_GBO_INV_IRR_DRIP_TAPE",
     "res_inv_GBO_INV_IRR_EMITTERS",
     "res_inv_GBO_INV_IRR_HOSE_COUPLER",
@@ -18,7 +21,9 @@
     "res_inv_GBO_INV_PINT_CLAMSHELLS",
     "res_inv_GBO_INV_PPE_APRONS",
     "res_inv_GBO_INV_PPE_GOGGLES",
+    "res_inv_GBO_INV_PRODUCE_BAGS",
     "res_inv_GBO_INV_QUART_CLAMSHELLS",
+    "res_inv_GBO_INV_SANITIZER_TEST_STRIPS",
     "res_weather_nws_GBO_DIRECT_001"
   ],
   "evidence_trust_tiers": [
@@ -45,6 +50,7 @@
     "Certified crop advisor recommendation",
     "Field scouting report",
     "High tunnel internal humidity readings",
+    "Sanitizer Test Strips sanitizer monitoring details",
     "card reader functional status",
     "ice supply availability"
   ],

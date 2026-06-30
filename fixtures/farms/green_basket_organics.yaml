@@ -98,6 +98,7 @@ inventory:
     unit: "units"
     last_updated: "2026-06-21"
     data_quality: "manual_count"
+    reorder_threshold: 200.0
   - item_id: "GBO_INV_QUART_CLAMSHELLS"
     item_type: "quart_clamshells"
     product_name: "Quart Clamshells"
@@ -105,6 +106,7 @@ inventory:
     unit: "units"
     last_updated: "2026-06-21"
     data_quality: "manual_count"
+    reorder_threshold: 100.0
   - item_id: "GBO_INV_PAPER_BAGS"
     item_type: "paper_bags"
     product_name: "Paper Bags"
@@ -112,6 +114,7 @@ inventory:
     unit: "units"
     last_updated: "2026-06-21"
     data_quality: "manual_count"
+    reorder_threshold: 200.0
   - item_id: "GBO_INV_CSA_BOXES"
     item_type: "csa_boxes"
     product_name: "CSA Boxes"
@@ -119,6 +122,7 @@ inventory:
     unit: "units"
     last_updated: "2026-06-21"
     data_quality: "manual_count"
+    reorder_threshold: 150.0
   - item_id: "GBO_INV_LABELS"
     item_type: "labels"
     product_name: "Labels"
@@ -126,6 +130,7 @@ inventory:
     unit: "units"
     last_updated: "2026-06-21"
     data_quality: "manual_count"
+    reorder_threshold: 200.0
   - item_id: "GBO_INV_ORGANIC_FERT"
     item_type: "fertilizer"
     product_name: "Organic Granular Fertilizer"
@@ -231,6 +236,57 @@ inventory:
     reorder_threshold: 5.0
     compatible_equipment: "Hose irrigation"
     maintenance_criticality: "low"
+  - item_id: "GBO_INV_HARVEST_TOTES"
+    item_type: "harvest_supply"
+    product_name: "Harvest Totes"
+    quantity: 18.0
+    unit: "units"
+    reorder_threshold: 24.0
+    last_updated: "2026-06-21"
+    compatible_workflow: "harvest"
+    storage_location: "wash_pack"
+    data_quality: "current"
+  - item_id: "GBO_INV_SANITIZER_TEST_STRIPS"
+    item_type: "wash_pack_supply"
+    product_name: "Sanitizer Test Strips"
+    quantity: 10.0
+    unit: "units"
+    reorder_threshold: 25.0
+    last_updated: "2026-06-21"
+    compatible_workflow: "wash_pack"
+    food_safety_relevant: true
+    storage_location: "wash_pack"
+    data_quality: "current"
+  - item_id: "GBO_INV_PRODUCE_BAGS"
+    item_type: "packaging_supply"
+    product_name: "Produce Bags"
+    quantity: 75.0
+    unit: "units"
+    reorder_threshold: 150.0
+    last_updated: "2026-06-21"
+    compatible_workflow: "market_packing"
+    storage_location: "market_shed"
+    data_quality: "current"
+  - item_id: "GBO_INV_CSA_LINERS"
+    item_type: "packaging_supply"
+    product_name: "CSA Box Liners"
+    quantity: 40.0
+    unit: "units"
+    reorder_threshold: 100.0
+    last_updated: "2026-06-21"
+    compatible_workflow: "CSA_packing"
+    storage_location: "market_shed"
+    data_quality: "current"
+  - item_id: "GBO_INV_COOLER_LABELS"
+    item_type: "post_harvest_supply"
+    product_name: "Cooler Labels"
+    quantity: 20.0
+    unit: "units"
+    reorder_threshold: 50.0
+    last_updated: "2026-06-21"
+    compatible_workflow: "cooler_inventory"
+    storage_location: "cooler"
+    data_quality: "current"
 
 quotes:
   - quote_id: "GBO_QUOTE_CLAMSHELLS_2026_06_18"
