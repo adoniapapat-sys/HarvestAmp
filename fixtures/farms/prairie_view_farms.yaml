@@ -177,6 +177,56 @@ inventory:
     sds_on_file: true
     licensed_applicator_required: false
     restricted_use_flag: false
+  - item_id: "PVF_INV_PART_TRACTOR_FILTER"
+    item_type: "equipment_part"
+    product_name: "Tractor Fuel Filter"
+    quantity: 1.0
+    unit: "units"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+    reorder_threshold: 2.0
+    compatible_equipment: "Tractor"
+    maintenance_criticality: "medium"
+  - item_id: "PVF_INV_PART_PLANTER_DISK"
+    item_type: "equipment_part"
+    product_name: "Planter Disk Opener"
+    quantity: 4.0
+    unit: "units"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+    reorder_threshold: 4.0
+    compatible_equipment: "Planter"
+    maintenance_criticality: "high"
+  - item_id: "PVF_INV_SUPPLY_HYDRAULIC_HOSE"
+    item_type: "maintenance_supply"
+    product_name: "Hydraulic Hose"
+    quantity: 1.0
+    unit: "units"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+    reorder_threshold: 2.0
+    compatible_equipment: "General machinery"
+    maintenance_criticality: "high"
+  - item_id: "PVF_INV_IRR_PUMP_BELT"
+    item_type: "irrigation_supply"
+    product_name: "Irrigation Pump Drive Belt"
+    quantity: 0.0
+    unit: "units"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+    reorder_threshold: 1.0
+    compatible_equipment: "Irrigation pump"
+    maintenance_criticality: "high"
+  - item_id: "PVF_INV_IRR_MAIN_VALVE"
+    item_type: "irrigation_supply"
+    product_name: "Irrigation Mainline Valve"
+    quantity: 2.0
+    unit: "units"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+    reorder_threshold: 2.0
+    compatible_equipment: "Irrigation system"
+    maintenance_criticality: "medium"
 
 quotes:
   - quote_id: "PVF_QUOTE_DIESEL_2026_06_21"

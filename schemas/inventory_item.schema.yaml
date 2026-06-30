@@ -43,5 +43,10 @@ properties:
     type: boolean
   restricted_use_flag:
     type: boolean
+  compatible_equipment:
+    type: string
+  maintenance_criticality:
+    type: string
+
 
 

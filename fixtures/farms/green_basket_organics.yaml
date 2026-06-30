@@ -171,6 +171,66 @@ inventory:
     organic_documentation_on_file: false
     licensed_applicator_required: false
     restricted_use_flag: false
+  - item_id: "GBO_INV_PART_TILLER_BELT"
+    item_type: "equipment_part"
+    product_name: "Tiller Drive Belt"
+    quantity: 1.0
+    unit: "units"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+    reorder_threshold: 2.0
+    compatible_equipment: "Walk-behind tiller"
+    maintenance_criticality: "medium"
+  - item_id: "GBO_INV_PART_GREENHOUSE_MOTOR"
+    item_type: "equipment_part"
+    product_name: "Greenhouse Fan Replacement Motor"
+    quantity: 0.0
+    unit: "units"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+    reorder_threshold: 1.0
+    compatible_equipment: "Greenhouse fan"
+    maintenance_criticality: "high"
+  - item_id: "GBO_INV_IRR_DRIP_TAPE"
+    item_type: "irrigation_supply"
+    product_name: "Drip Tape Roll"
+    quantity: 1.0
+    unit: "rolls"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+    reorder_threshold: 2.0
+    compatible_equipment: "Drip irrigation system"
+    maintenance_criticality: "medium"
+  - item_id: "GBO_INV_IRR_EMITTERS"
+    item_type: "irrigation_supply"
+    product_name: "Drip Irrigation Emitters"
+    quantity: 50.0
+    unit: "units"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+    reorder_threshold: 100.0
+    compatible_equipment: "Drip irrigation system"
+    maintenance_criticality: "medium"
+  - item_id: "GBO_INV_IRR_VALVE_KIT"
+    item_type: "irrigation_supply"
+    product_name: "Irrigation Valve and Fitting Kit"
+    quantity: 1.0
+    unit: "kits"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+    reorder_threshold: 2.0
+    compatible_equipment: "Irrigation system"
+    maintenance_criticality: "medium"
+  - item_id: "GBO_INV_IRR_HOSE_COUPLER"
+    item_type: "irrigation_supply"
+    product_name: "Hose Repair Coupler"
+    quantity: 3.0
+    unit: "units"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+    reorder_threshold: 5.0
+    compatible_equipment: "Hose irrigation"
+    maintenance_criticality: "low"
 
 quotes:
   - quote_id: "GBO_QUOTE_CLAMSHELLS_2026_06_18"
