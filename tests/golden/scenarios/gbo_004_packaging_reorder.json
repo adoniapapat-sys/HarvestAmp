@@ -1,0 +1,73 @@
+{
+  "evidence_ids": [
+    "res_inv_GBO_INV_CSA_BOXES",
+    "res_inv_GBO_INV_LABELS",
+    "res_inv_GBO_INV_PAPER_BAGS",
+    "res_inv_GBO_INV_PINT_CLAMSHELLS",
+    "res_inv_GBO_INV_QUART_CLAMSHELLS",
+    "res_quote_GBO_QUOTE_CLAMSHELLS_2026_06_18",
+    "res_quote_GBO_QUOTE_CSA_BOXES_2026_06_18"
+  ],
+  "evidence_trust_tiers": [
+    "T1 Official / primary",
+    "T3 User-entered"
+  ],
+  "human_review": {
+    "approval_required_before": [
+      "commit_to_delivery",
+      "create_purchase_order",
+      "send_message"
+    ],
+    "recommended_reviewers": [],
+    "required": true,
+    "review_type": "user_approval",
+    "status": "needs_user_approval"
+  },
+  "inventory_coverage": {
+    "crop_protection_documentation": true,
+    "equipment_or_spare_parts": false,
+    "fertilizer_or_soil_amendment": false,
+    "irrigation_supplies": false,
+    "packaging_or_market_supplies": true,
+    "safety_ppe": false,
+    "stored_grain_or_bin": false
+  },
+  "missing_data": [
+    "expected harvest volume for unharvested blocks"
+  ],
+  "proposed_action_statuses": [
+    "needs_user_approval"
+  ],
+  "proposed_action_types": [
+    "supplier_message"
+  ],
+  "recommendation_count": 3,
+  "recommendation_titles_or_topics": [
+    "Inventory Records",
+    "Margin Scenario",
+    "Packaging Reorder"
+  ],
+  "recommendation_types": [
+    "inventory_records",
+    "margin_scenario",
+    "packaging_reorder"
+  ],
+  "role_safety": {
+    "contains_forbidden_wording": false,
+    "contains_restricted_terms": true,
+    "has_proposed_actions": true
+  },
+  "scenario_flags": {
+    "has_compliance_context": false,
+    "has_crop_protection_guardrail": false,
+    "has_fuel_or_diesel_context": false,
+    "has_missing_data": true,
+    "has_organic_documentation_context": true,
+    "has_packaging_or_market_supply_context": true,
+    "has_procurement_context": true,
+    "has_public_context": false,
+    "has_records_inventory_context": true
+  },
+  "status": "draft",
+  "warnings": []
+}

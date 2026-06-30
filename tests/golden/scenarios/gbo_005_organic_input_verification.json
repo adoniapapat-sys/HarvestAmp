@@ -1,0 +1,79 @@
+{
+  "evidence_ids": [
+    "res_inv_GBO_INV_BIOCONTROL_GENERAL",
+    "res_inv_GBO_INV_COMPOST",
+    "res_inv_GBO_INV_IRR_DRIP_TAPE",
+    "res_inv_GBO_INV_IRR_EMITTERS",
+    "res_inv_GBO_INV_IRR_HOSE_COUPLER",
+    "res_inv_GBO_INV_IRR_VALVE_KIT",
+    "res_inv_GBO_INV_ORGANIC_FERT",
+    "res_inv_GBO_INV_PART_GREENHOUSE_MOTOR",
+    "res_inv_GBO_INV_PART_TILLER_BELT",
+    "res_inv_GBO_INV_PPE_APRONS",
+    "res_inv_GBO_INV_PPE_GOGGLES",
+    "res_quote_GBO_QUOTE_ORGANIC_FERT_2026_06_20"
+  ],
+  "evidence_trust_tiers": [
+    "T1 Official / primary",
+    "T3 User-entered"
+  ],
+  "human_review": {
+    "approval_required_before": [
+      "apply_to_field_plan",
+      "create_purchase_order",
+      "share_with_certifier"
+    ],
+    "recommended_reviewers": [],
+    "required": true,
+    "review_type": "expert_review",
+    "status": "needs_expert_review"
+  },
+  "inventory_coverage": {
+    "crop_protection_documentation": true,
+    "equipment_or_spare_parts": false,
+    "fertilizer_or_soil_amendment": true,
+    "irrigation_supplies": false,
+    "packaging_or_market_supplies": false,
+    "safety_ppe": true,
+    "stored_grain_or_bin": false
+  },
+  "missing_data": [
+    "OMRI certificates for new inputs",
+    "OMRI certifier document",
+    "Supplier certificate",
+    "certifier organic input approval record"
+  ],
+  "proposed_action_statuses": [
+    "needs_expert_review"
+  ],
+  "proposed_action_types": [
+    "share_with_certifier"
+  ],
+  "recommendation_count": 2,
+  "recommendation_titles_or_topics": [
+    "Organic Input Records",
+    "Organic Input Verification"
+  ],
+  "recommendation_types": [
+    "organic_input_records",
+    "organic_input_verification"
+  ],
+  "role_safety": {
+    "contains_forbidden_wording": false,
+    "contains_restricted_terms": false,
+    "has_proposed_actions": true
+  },
+  "scenario_flags": {
+    "has_compliance_context": true,
+    "has_crop_protection_guardrail": false,
+    "has_fuel_or_diesel_context": true,
+    "has_missing_data": true,
+    "has_organic_documentation_context": true,
+    "has_packaging_or_market_supply_context": false,
+    "has_procurement_context": true,
+    "has_public_context": false,
+    "has_records_inventory_context": true
+  },
+  "status": "draft",
+  "warnings": []
+}
