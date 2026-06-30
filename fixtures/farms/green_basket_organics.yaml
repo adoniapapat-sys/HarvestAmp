@@ -126,6 +126,38 @@ inventory:
     unit: "units"
     last_updated: "2026-06-21"
     data_quality: "manual_count"
+  - item_id: "GBO_INV_ORGANIC_FERT"
+    item_type: "fertilizer"
+    product_name: "Organic Granular Fertilizer"
+    quantity: 4.0
+    unit: "bags"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+    reorder_threshold: 5.0
+  - item_id: "GBO_INV_COMPOST"
+    item_type: "soil_amendment"
+    product_name: "Compost Amendment"
+    quantity: 12.0
+    unit: "cubic yards"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+    reorder_threshold: 8.0
+  - item_id: "GBO_INV_PPE_GOGGLES"
+    item_type: "safety_ppe"
+    product_name: "Safety Goggles"
+    quantity: 1.0
+    unit: "units"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+    reorder_threshold: 3.0
+  - item_id: "GBO_INV_PPE_APRONS"
+    item_type: "safety_ppe"
+    product_name: "Wash-pack Aprons"
+    quantity: 12.0
+    unit: "units"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+    reorder_threshold: 6.0
 quotes:
   - quote_id: "GBO_QUOTE_CLAMSHELLS_2026_06_18"
     supplier: "Local Pack Corp"

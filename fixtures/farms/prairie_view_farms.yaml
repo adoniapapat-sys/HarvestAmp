@@ -109,6 +109,38 @@ inventory:
     quantity: 9000
     unit: "bushels"
     last_updated: "2026-06-21"
+  - item_id: "PVF_INV_UREA"
+    item_type: "fertilizer"
+    product_name: "Urea"
+    quantity: 8.0
+    unit: "tons"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+    reorder_threshold: 10.0
+  - item_id: "PVF_INV_UAN32"
+    item_type: "fertilizer"
+    product_name: "UAN 32"
+    quantity: 15.0
+    unit: "tons"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+    reorder_threshold: 10.0
+  - item_id: "PVF_INV_PPE_RESPIRATORS"
+    item_type: "safety_ppe"
+    product_name: "Respirator Masks"
+    quantity: 2.0
+    unit: "units"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+    reorder_threshold: 3.0
+  - item_id: "PVF_INV_PPE_GLOVES"
+    item_type: "safety_ppe"
+    product_name: "Safety Gloves"
+    quantity: 50.0
+    unit: "units"
+    last_updated: "2026-06-21"
+    data_quality: "manual_count"
+    reorder_threshold: 20.0
 quotes:
   - quote_id: "PVF_QUOTE_DIESEL_2026_06_21"
     supplier: "River County Fuel"

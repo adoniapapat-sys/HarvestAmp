@@ -23,3 +23,12 @@ properties:
     type: string
   data_quality:
     type: string
+  reorder_threshold:
+    type: number
+  storage_location:
+    type: string
+  restricted_visibility:
+    type: array
+    items:
+      type: string
+
