@@ -664,6 +664,113 @@ class ProcurementAgent(BaseAgent):
 
         return self.create_finding(work_item, "procurement_general", "Procurement analysis complete.", "No specific recommendation.", "info", "high", evidence_ids)
 
+    def surface_extracted_documents(
+        self,
+        work_item: Dict[str, Any],
+        context: Dict[str, Any],
+        extracted_documents: List[Dict[str, Any]],
+    ) -> Optional[Dict[str, Any]]:
+        """Surface supplier_quote, supplier_invoice, fuel_receipt, and
+        packaging_receipt documents as read-only context.  Must be called
+        explicitly — never invoked automatically during normal weekly-plan
+        generation.
+
+        This method does not contact suppliers, place orders, send messages,
+        approve purchases, execute payments, or update inventory or official
+        records.
+        """
+        user_role = context.get("user_role", "")
+        restricted = user_role in {"field_employee", "seasonal_worker", "crew_member", "employee"}
+
+        relevant_types = {"supplier_quote", "supplier_invoice", "fuel_receipt", "packaging_receipt"}
+        relevant = [d for d in extracted_documents if d.get("document_type") in relevant_types]
+        if not relevant:
+            return None
+
+        context_lines: List[str] = []
+        evidence_ids: List[str] = []
+        warnings: List[str] = []
+
+        for doc in relevant:
+            doc_type = doc["document_type"]
+            fields = doc.get("extracted_fields", {})
+            ev_id = doc.get("evidence_id", "")
+            confidence = doc.get("extraction_confidence", "low")
+            missing = doc.get("missing_fields", [])
+
+            if restricted:
+                # Redact supplier/pricing details for field_employee
+                label = {
+                    "supplier_quote": "Read-only quote context available for management review.",
+                    "supplier_invoice": "Read-only invoice context available for management review.",
+                    "fuel_receipt": "Read-only fuel receipt context available for management review.",
+                    "packaging_receipt": "Read-only packaging receipt context available for management review.",
+                }.get(doc_type, "Read-only document context available for management review.")
+                context_lines.append(label)
+                evidence_ids.append("Authorized operational records")
+            else:
+                product = fields.get("product_name", "unknown")
+                supplier = fields.get("supplier_name", "unknown")
+                if doc_type == "supplier_quote":
+                    price = fields.get("unit_price", "unknown")
+                    context_lines.append(
+                        f"Read-only quote context: {supplier} — {product} at ${price}/unit."
+                    )
+                elif doc_type == "supplier_invoice":
+                    total = fields.get("total_price", "unknown")
+                    qty = fields.get("quantity", "unknown")
+                    unit = fields.get("unit", "")
+                    context_lines.append(
+                        f"Read-only invoice context: {supplier} — {product} {qty} {unit}, total ${total}."
+                    )
+                elif doc_type == "fuel_receipt":
+                    qty = fields.get("quantity", "unknown")
+                    unit = fields.get("unit", "")
+                    context_lines.append(
+                        f"Read-only receipt context: {supplier} — {product} {qty} {unit}."
+                    )
+                elif doc_type == "packaging_receipt":
+                    qty = fields.get("quantity", "unknown")
+                    unit = fields.get("unit", "")
+                    context_lines.append(
+                        f"Read-only receipt context: {supplier} — {product} {qty} {unit}."
+                    )
+                evidence_ids.append(ev_id)
+
+            if confidence in ("low", "medium") or missing:
+                warnings.append(
+                    f"Document {doc.get('document_id', 'unknown')} has "
+                    f"{confidence} confidence with missing fields: {', '.join(missing) if missing else 'none'}. "
+                    f"Review required before any action."
+                )
+
+        # Deduplicate
+        evidence_ids = list(dict.fromkeys(evidence_ids))
+
+        if restricted:
+            disclaimer = "This is read-only document context for review. No task or farm system has been changed."
+        else:
+            disclaimer = "This is read-only extracted-document context for review. No farm system, record, payment, or outside party has been changed."
+
+        summary = " ".join(context_lines) + f" {disclaimer}"
+
+        recommendation = "Review extracted document context before any procurement decision."
+
+        f = self.create_finding(
+            work_item, "extracted_document_context", summary, recommendation,
+            "info", "medium", evidence_ids,
+        )
+        if warnings:
+            f["missing_data"] = warnings
+        f["human_review"] = {
+            "required": True,
+            "review_type": "user_approval",
+            "risk_tier": "tier_2",
+            "status": "needs_user_approval",
+            "reason": ["extracted_document_review"],
+        }
+        return f
+
 
 class RecordsAgent(BaseAgent):
     """Tracks internal records and updates inventory status."""
@@ -978,6 +1085,92 @@ class RecordsAgent(BaseAgent):
             return self.create_finding(
                 work_item, "inventory_records", summary, "Verify and reconcile sensor values with physical count.", "info", "high", evidence_ids
             )
+
+    def surface_extracted_documents(
+        self,
+        work_item: Dict[str, Any],
+        context: Dict[str, Any],
+        extracted_documents: List[Dict[str, Any]],
+    ) -> Optional[Dict[str, Any]]:
+        """Surface harvest_load_ticket and inventory_count_sheet documents as
+        read-only context.  Must be called explicitly — never invoked
+        automatically during normal weekly-plan generation.
+
+        This method does not update inventory, official records, or mark
+        any load ticket as reconciled.
+        """
+        user_role = context.get("user_role", "")
+        restricted = user_role in {"field_employee", "seasonal_worker", "crew_member", "employee"}
+
+        relevant_types = {"harvest_load_ticket", "inventory_count_sheet"}
+        relevant = [d for d in extracted_documents if d.get("document_type") in relevant_types]
+        if not relevant:
+            return None
+
+        context_lines: List[str] = []
+        evidence_ids: List[str] = []
+        warnings: List[str] = []
+
+        for doc in relevant:
+            doc_type = doc["document_type"]
+            fields = doc.get("extracted_fields", {})
+            ev_id = doc.get("evidence_id", "")
+            confidence = doc.get("extraction_confidence", "low")
+            missing = doc.get("missing_fields", [])
+
+            if doc_type == "harvest_load_ticket":
+                product = fields.get("product_name", "unknown")
+                qty = fields.get("quantity", "unknown")
+                unit = fields.get("unit", "")
+                context_lines.append(
+                    f"Read-only load-ticket context: {product} {qty} {unit}."
+                )
+            elif doc_type == "inventory_count_sheet":
+                product = fields.get("product_name", "unknown")
+                qty = fields.get("quantity", "unknown")
+                unit = fields.get("unit", "")
+                context_lines.append(
+                    f"Read-only count-sheet context: {product} {qty} {unit}."
+                )
+
+            if confidence in ("low", "medium") or missing:
+                warnings.append(
+                    f"Document {doc.get('document_id', 'unknown')} has "
+                    f"{confidence} confidence with missing fields: {', '.join(missing) if missing else 'none'}. "
+                    f"Review required before any action."
+                )
+
+            if restricted:
+                evidence_ids.append("Authorized operational records")
+            else:
+                evidence_ids.append(ev_id)
+
+        # Deduplicate
+        evidence_ids = list(dict.fromkeys(evidence_ids))
+
+        if restricted:
+            disclaimer = "This is read-only document context for review. No task or farm system has been changed."
+        else:
+            disclaimer = "This is read-only extracted-document context for review. No farm system, record, payment, or outside party has been changed."
+
+        summary = " ".join(context_lines) + f" {disclaimer}"
+
+        recommendation = "Review extracted document context and reconcile with physical records."
+
+        f = self.create_finding(
+            work_item, "extracted_document_context", summary, recommendation,
+            "info", "medium", evidence_ids,
+        )
+        if warnings:
+            f["missing_data"] = warnings
+        f["human_review"] = {
+            "required": True,
+            "review_type": "user_approval",
+            "risk_tier": "tier_2",
+            "status": "needs_user_approval",
+            "reason": ["extracted_document_review"],
+        }
+        return f
 
 
 class MarketAgent(BaseAgent):
