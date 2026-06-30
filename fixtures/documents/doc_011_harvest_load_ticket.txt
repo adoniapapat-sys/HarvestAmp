@@ -1,0 +1,6 @@
+Farm ID: PVF_ROW_CROP_001
+Date: 2026-06-25
+Product: Corn
+Harvest Load Ticket
+Quantity: 850
+Unit: bushels

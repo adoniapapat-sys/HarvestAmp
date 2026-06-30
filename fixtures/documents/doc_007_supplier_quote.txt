@@ -1,0 +1,6 @@
+Supplier Quote
+Supplier: Ag Express Co-op
+Quote Date: 2026-06-25
+Product: Dyed diesel
+Unit Price: 3.55
+Valid Until: 2026-07-10

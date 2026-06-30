@@ -146,3 +146,167 @@ def test_reviewed_decision_anchor_requires_source_label_and_approval():
     res["decision_anchor_status"] = "reviewed_approved"
     res["human_review"]["status"] = "approved"
     assert can_reference_as_reviewed_decision_anchor(res) is True
+
+
+def test_schema_validation_for_new_types():
+    from harvestamp.core.schemas import load_schema, validate_object
+    schema = load_schema("document_extraction")
+    
+    for doc_type in ["supplier_quote", "supplier_invoice", "fuel_receipt", "packaging_receipt", "harvest_load_ticket", "inventory_count_sheet"]:
+        mock_result = {
+            "document_id": "DOC_TEST_123",
+            "farm_id": "PVF_ROW_CROP_001",
+            "document_type": doc_type,
+            "source_name": "local_test",
+            "source_file_reference": "test.txt",
+            "extraction_status": "success",
+            "extraction_confidence": "high",
+            "data_sensitivity": "Farm Restricted",
+            "extracted_fields": {"product_name": "test"},
+            "missing_fields": [],
+            "redactions_applied": [],
+            "evidence_id": "ev_doc_123",
+            "human_review": {"required": False, "review_type": "none", "status": "approved"}
+        }
+        valid, errors = validate_object(mock_result, schema)
+        assert valid is True, f"Schema validation failed for {doc_type}: {errors}"
+
+
+def test_supplier_quote_extraction():
+    res = extract("doc_007_supplier_quote.txt")
+    fields = res["extracted_fields"]
+    assert res["document_type"] == "supplier_quote"
+    assert res["extraction_confidence"] == "high"
+    assert fields["supplier_name"] == "Ag Express Co-op"
+    assert fields["product_name"] == "Dyed diesel"
+    assert fields["unit_price"] == 3.55
+    assert fields["valid_until"] == "2026-07-10"
+    assert "ev_doc_" in res["evidence_id"]
+    assert "res_inv_" not in res["evidence_id"]
+    # Check no payment sent or executed wording
+    serialized = json.dumps(res).lower()
+    assert "payment sent" not in serialized
+    assert "payment executed" not in serialized
+    assert "invoice paid" not in serialized
+    assert "order placed" not in serialized
+
+
+def test_supplier_invoice_extraction():
+    res = extract("doc_008_supplier_invoice.txt")
+    fields = res["extracted_fields"]
+    assert res["document_type"] == "supplier_invoice"
+    assert fields["supplier_name"] == "Ag Express Co-op"
+    assert fields["quantity"] == 1000.0
+    assert fields["unit"] == "gallons"
+    assert fields["unit_price"] == 3.58
+    assert fields["total_price"] == 3580.00
+    # Check no payment executed wording
+    serialized = json.dumps(res).lower()
+    assert "payment sent" not in serialized
+    assert "invoice paid" not in serialized
+
+
+def test_fuel_receipt_extraction():
+    res = extract("doc_009_fuel_receipt.txt")
+    fields = res["extracted_fields"]
+    assert res["document_type"] == "fuel_receipt"
+    assert fields["supplier_name"] == "River County Fuel"
+    assert fields["quantity"] == 500.0
+    assert fields["unit"] == "gallons"
+    assert fields["unit_price"] == 3.65
+    assert fields["total_price"] == 1825.00
+    # Check no payment executed wording
+    serialized = json.dumps(res).lower()
+    assert "payment sent" not in serialized
+    assert "invoice paid" not in serialized
+
+
+def test_packaging_receipt_extraction():
+    res = extract("doc_010_packaging_receipt.txt")
+    fields = res["extracted_fields"]
+    assert res["document_type"] == "packaging_receipt"
+    assert fields["supplier_name"] == "Market Pack Supply"
+    assert fields["quantity"] == 50.0
+    assert fields["unit"] == "cases"
+    assert fields["unit_price"] == 18.00
+    assert fields["total_price"] == 900.00
+    # Check no payment executed wording
+    serialized = json.dumps(res).lower()
+    assert "payment sent" not in serialized
+    assert "invoice paid" not in serialized
+
+
+def test_harvest_load_ticket_extraction():
+    res = extract("doc_011_harvest_load_ticket.txt")
+    fields = res["extracted_fields"]
+    assert res["document_type"] == "harvest_load_ticket"
+    assert fields["farm_id"] == "PVF_ROW_CROP_001"
+    assert fields["product_name"] == "Corn"
+    assert fields["quantity"] == 850.0
+    assert fields["unit"] == "bushels"
+    # Check no load ticket reconciled language
+    serialized = json.dumps(res).lower()
+    assert "load ticket reconciled" not in serialized
+
+
+def test_inventory_count_sheet_extraction():
+    res = extract("doc_012_inventory_count_sheet.txt")
+    fields = res["extracted_fields"]
+    assert res["document_type"] == "inventory_count_sheet"
+    assert fields["farm_id"] == "GBO_DIRECT_001"
+    assert fields["product_name"] == "Pint Clamshells"
+    assert fields["quantity"] == 150.0
+    assert fields["unit"] == "cases"
+    # Check no automatic inventory update
+    serialized = json.dumps(res).lower()
+    assert "inventory updated" not in serialized
+    assert "official record updated" not in serialized
+    assert any("does not update inventory records automatically" in note for note in res["notes"])
+
+
+def test_missing_fields_produces_low_confidence_or_review_required():
+    # Supplier quote with missing valid_until
+    raw_text = """
+    Supplier Quote
+    Supplier: Ag Express Co-op
+    Quote Date: 2026-06-25
+    Product: Dyed diesel
+    Unit Price: 3.55
+    """
+    res = DocumentExtractor().extract_text(raw_text, "PVF_ROW_CROP_001", "DOC_TEST_MISSING")
+    assert res.document_type == "supplier_quote"
+    assert "valid_until" in res.missing_fields
+    assert res.human_review.required is True
+    assert res.human_review.status in ["needs_info", "needs_user_approval"]
+
+
+def test_employee_redaction_for_new_types():
+    res_quote = extract("doc_007_supplier_quote.txt")
+    redacted_quote = redact_for_role(res_quote, "field_employee")
+    assert redacted_quote["extracted_fields"]["supplier_name"] == "[REDACTED_FOR_ROLE]"
+    assert redacted_quote["extracted_fields"]["unit_price"] == "[REDACTED_FOR_ROLE]"
+    
+    res_invoice = extract("doc_008_supplier_invoice.txt")
+    redacted_invoice = redact_for_role(res_invoice, "field_employee")
+    assert redacted_invoice["extracted_fields"]["supplier_name"] == "[REDACTED_FOR_ROLE]"
+    assert redacted_invoice["extracted_fields"]["unit_price"] == "[REDACTED_FOR_ROLE]"
+    assert redacted_invoice["extracted_fields"]["total_price"] == "[REDACTED_FOR_ROLE]"
+    assert redacted_invoice["proposed_record"] == "[REDACTED_FOR_ROLE]"
+
+
+def test_no_forbidden_external_action_wording_in_new_types():
+    for doc in ["doc_007_supplier_quote.txt", "doc_008_supplier_invoice.txt", "doc_009_fuel_receipt.txt", "doc_010_packaging_receipt.txt", "doc_011_harvest_load_ticket.txt", "doc_012_inventory_count_sheet.txt"]:
+        res = extract(doc)
+        serialized = json.dumps(res).lower()
+        forbidden = [
+            "order placed",
+            "supplier contacted",
+            "message sent",
+            "invoice paid",
+            "payment sent",
+            "inventory updated",
+            "official record updated",
+            "load ticket reconciled"
+        ]
+        for term in forbidden:
+            assert term not in serialized

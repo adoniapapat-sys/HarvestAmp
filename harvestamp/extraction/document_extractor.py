@@ -35,6 +35,12 @@ REQUIRED_FIELDS: Dict[str, List[str]] = {
     "seed_quote": ["supplier_name", "invoice_or_quote_date", "crop", "variety_hybrid", "quantity", "unit", "unit_price", "treatment_trait", "population_or_acre_target"],
     "packaging_invoice": ["supplier_name", "invoice_or_quote_date", "product_name", "quantity", "unit", "unit_price", "total_price"],
     "general_input_invoice": ["supplier_name", "invoice_or_quote_date", "product_name", "quantity", "unit", "unit_price", "total_price"],
+    "supplier_quote": ["supplier_name", "invoice_or_quote_date", "product_name", "unit_price", "valid_until"],
+    "supplier_invoice": ["supplier_name", "invoice_or_quote_date", "product_name", "quantity", "unit", "unit_price", "total_price"],
+    "fuel_receipt": ["supplier_name", "invoice_or_quote_date", "product_name", "quantity", "unit", "unit_price", "total_price"],
+    "packaging_receipt": ["supplier_name", "invoice_or_quote_date", "product_name", "quantity", "unit", "unit_price", "total_price"],
+    "harvest_load_ticket": ["farm_id", "invoice_or_quote_date", "product_name", "quantity", "unit"],
+    "inventory_count_sheet": ["farm_id", "invoice_or_quote_date", "product_name", "quantity", "unit"],
     "unknown": ["supplier_name", "invoice_or_quote_date", "product_name", "quantity", "unit_price", "total_price"],
 }
 
@@ -135,14 +141,39 @@ def redact_sensitive_text(text: str) -> Tuple[str, List[str]]:
 
 def classify_document_type(text: str) -> str:
     lower = text.lower()
-    if _contains_any_phrase(lower, ["dyed diesel", "fuel invoice"]) or _contains_any_word(lower, ["diesel", "gallons"]):
-        return "fuel_invoice"
+    if _contains_any_phrase(lower, ["fuel receipt", "diesel receipt"]):
+        return "fuel_receipt"
+    if _contains_any_phrase(lower, ["packaging receipt", "clamshell receipt"]):
+        return "packaging_receipt"
+    if _contains_any_phrase(lower, ["load ticket", "scale ticket", "harvest ticket", "harvest load ticket"]):
+        return "harvest_load_ticket"
+    if _contains_any_phrase(lower, ["inventory count", "count sheet", "physical count sheet", "inventory count sheet"]):
+        return "inventory_count_sheet"
+    
+    # Explicit exact phrase matches for supplier quote / invoice
+    if _contains_any_phrase(lower, ["supplier quote", "vendor quote", "price quote"]):
+        return "supplier_quote"
+    if _contains_any_phrase(lower, ["supplier invoice", "vendor invoice"]):
+        return "supplier_invoice"
+
+    # Specific quotes and invoices
     if _contains_any_phrase(lower, ["46-0-0"]) or _contains_any_word(lower, ["fertilizer", "urea", "uan", "anhydrous", "potash"]):
         return "fertilizer_quote" if _contains_any_word(lower, ["quote"]) else "general_input_invoice"
     if _contains_any_phrase(lower, ["seed quote", "seed corn", "trait package", "seed treatment"]) or _contains_any_word(lower, ["hybrid"]):
         return "seed_quote"
     if _contains_any_phrase(lower, ["csa box", "produce bags"]) or _contains_any_word(lower, ["clamshell", "packaging", "labels"]):
         return "packaging_invoice"
+        
+    # General fuel invoices
+    if _contains_any_phrase(lower, ["dyed diesel", "fuel invoice"]) or _contains_any_word(lower, ["diesel", "gallons"]):
+        return "fuel_invoice"
+
+    # General supplier quotes and invoices (keyword based fallback)
+    if "quote" in lower and ("supplier" in lower or "vendor" in lower):
+        return "supplier_quote"
+    if "invoice" in lower and ("supplier" in lower or "vendor" in lower):
+        return "supplier_invoice"
+        
     if _contains_any_word(lower, ["invoice", "quote", "receipt"]):
         return "general_input_invoice"
     return "unknown"
@@ -159,12 +190,13 @@ def _contains_any_phrase(text: str, phrases: Iterable[str]) -> bool:
 def extract_fields(text: str, document_type: str) -> Dict[str, Any]:
     fields: Dict[str, Any] = {
         "supplier_name": _find_labeled_text(text, ["Supplier", "Vendor", "From", "Dealer"]),
+        "farm_id": _find_labeled_text(text, ["Farm ID", "Farm", "Location"]),
         "invoice_or_quote_date": _find_date(text),
         "product_name": _find_product_name(text),
         "quantity": None,
         "unit": None,
         "unit_price": _find_money(text, ["Unit Price", "Unit Cost", "Price", "Rate"]),
-        "total_price": _find_money(text, ["Total", "Invoice Total", "Quote Total", "Amount Due"]),
+        "total_price": _find_money(text, ["Total Price", "Total", "Invoice Total", "Quote Total", "Amount Due"]),
         "delivery_fee": _find_money_or_missing(text, ["Delivery Fee", "Delivery", "Freight", "Shipping"]),
         "application_fee": _find_money_or_missing(text, ["Application Fee", "Application", "Application Charge"]),
         "valid_until": _find_labeled_text(text, ["Valid Until", "Expires", "Expiration Date"]),
@@ -232,8 +264,12 @@ def _find_money_or_missing(text: str, labels: Iterable[str]) -> Any:
 
 
 def _find_quantity_and_unit(text: str, document_type: str) -> Tuple[Optional[float], Optional[str]]:
+    # Extract unit if on a separate line
+    unit_match = re.search(r"(?im)^\s*Unit\s*[:\-]\s*([A-Za-z][A-Za-z /_-]*)", text)
+    unit = _clean_unit(unit_match.group(1)) if unit_match else None
+
     patterns = [
-        r"(?im)^\s*Quantity\s*[:\-]\s*([0-9,]+(?:\.[0-9]+)?)\s*([A-Za-z][A-Za-z /_-]*)",
+        r"(?im)^\s*Quantity\s*[:\-]\s*([0-9,]+(?:\.[0-9]+)?)[ \t]*([A-Za-z][A-Za-z /_-]*)?",
         r"(?im)^\s*Gallons\s*[:\-]\s*([0-9,]+(?:\.[0-9]+)?)",
         r"(?im)^\s*Bags\s*[:\-]\s*([0-9,]+(?:\.[0-9]+)?)",
         r"(?im)^\s*Cases\s*[:\-]\s*([0-9,]+(?:\.[0-9]+)?)",
@@ -245,19 +281,20 @@ def _find_quantity_and_unit(text: str, document_type: str) -> Tuple[Optional[flo
             qty = _to_float(match.group(1))
             if len(match.groups()) >= 2 and match.group(2):
                 unit = _clean_unit(match.group(2))
-            elif "gallons" in pattern.lower():
-                unit = "gallons"
-            elif "bags" in pattern.lower():
-                unit = "bags"
-            elif "cases" in pattern.lower():
-                unit = "cases"
-            else:
-                unit = _default_unit_for(document_type)
+            elif not unit:
+                if "gallons" in pattern.lower():
+                    unit = "gallons"
+                elif "bags" in pattern.lower():
+                    unit = "bags"
+                elif "cases" in pattern.lower():
+                    unit = "cases"
+                else:
+                    unit = _default_unit_for(document_type)
             return qty, unit
     generic = re.search(r"(?i)\b([0-9,]+(?:\.[0-9]+)?)\s*(gallons|gal|tons|ton|bags|bag|cases|case|boxes|box|units|each)\b", text)
     if generic:
         return _to_float(generic.group(1)), _clean_unit(generic.group(2))
-    return None, None
+    return None, unit
 
 
 def _extract_line_items(text: str) -> List[Dict[str, Any]]:
@@ -341,6 +378,12 @@ def build_proposed_record(document_type: str, farm_id: str, document_id: str, fi
         "seed_quote": "draft_seed_quote_record",
         "packaging_invoice": "draft_packaging_inventory_record",
         "general_input_invoice": "draft_input_invoice_record",
+        "supplier_quote": "draft_supplier_quote_record",
+        "supplier_invoice": "draft_supplier_invoice_record",
+        "fuel_receipt": "draft_fuel_receipt_record",
+        "packaging_receipt": "draft_packaging_receipt_record",
+        "harvest_load_ticket": "draft_harvest_load_ticket",
+        "inventory_count_sheet": "draft_inventory_count_sheet",
     }.get(document_type, "draft_document_record")
     return {"record_type": record_type, "farm_id": farm_id, "document_id": document_id, "status": "draft_pending_review", "source_evidence_id": evidence_id, "fields": {k: v for k, v in fields.items() if v not in (None, "")}}
 
@@ -357,6 +400,12 @@ def build_notes(document_type: str, missing_fields: List[str], redactions: List[
         notes.append("No agronomic rate, timing, product selection, or tank-mix recommendation was made.")
     if document_type == "seed_quote":
         notes.append("No supplier selection or planting-rate decision was made.")
+    if document_type == "inventory_count_sheet":
+        notes.append("This inventory count sheet does not update inventory records automatically.")
+    if document_type in ["fuel_receipt", "packaging_receipt", "supplier_invoice", "supplier_quote"]:
+        notes.append("This invoice or receipt is not marked paid and no payment was executed.")
+    if document_type == "harvest_load_ticket":
+        notes.append("This harvest/load ticket is not marked reconciled.")
     if missing_fields:
         notes.append("Missing or ambiguous fields must be resolved before the record can be approved.")
     if redactions:
@@ -409,7 +458,18 @@ def _clean_unit(unit: str) -> str:
 
 
 def _default_unit_for(document_type: str) -> Optional[str]:
-    return {"fuel_invoice": "gallons", "fertilizer_quote": "tons", "seed_quote": "bags", "packaging_invoice": "cases"}.get(document_type)
+    return {
+        "fuel_invoice": "gallons",
+        "fertilizer_quote": "tons",
+        "seed_quote": "bags",
+        "packaging_invoice": "cases",
+        "supplier_quote": "units",
+        "supplier_invoice": "units",
+        "fuel_receipt": "gallons",
+        "packaging_receipt": "cases",
+        "harvest_load_ticket": "bushels",
+        "inventory_count_sheet": "units"
+    }.get(document_type)
 
 
 def _excerpt(text: str, limit: int = 800) -> str:

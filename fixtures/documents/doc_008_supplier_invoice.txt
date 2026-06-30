@@ -1,0 +1,8 @@
+Supplier Invoice
+Supplier: Ag Express Co-op
+Invoice Date: 2026-06-25
+Product: Dyed diesel
+Quantity: 1000
+Unit: gallons
+Unit Price: 3.58
+Total Price: 3580.00

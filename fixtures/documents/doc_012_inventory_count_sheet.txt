@@ -1,0 +1,6 @@
+Farm ID: GBO_DIRECT_001
+Date: 2026-06-25
+Product: Pint Clamshells
+Inventory Count Sheet
+Quantity: 150
+Unit: cases
