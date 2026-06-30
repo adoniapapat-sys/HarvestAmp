@@ -1170,6 +1170,87 @@ class ToolGateway:
         return results
 
 
+    def get_extracted_documents(
+        self,
+        capability_grant: Dict[str, Any],
+        requesting_farm_id: str,
+        target_farm_id: str,
+        user_role: str = "farm_owner",
+        document_type: Optional[str] = None,
+        farm_id_filter: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Load and return read-only extracted-document evidence from local fixtures.
+
+        This method is NOT automatically invoked during normal workflow
+        initialization. It must be called explicitly from tests or future
+        workflows. It never mutates inventory, invoices, accounting, records,
+        farm fixtures, or official data.
+
+        Evidence IDs use the ``ev_doc_*`` prefix.  Results are marked as
+        T2 Farm-supplied document / Farm Restricted and are local
+        user-provided / draft / unverified.
+        """
+        if not check_cross_farm_block(requesting_farm_id, target_farm_id):
+            raise PermissionError("Cross-farm data access blocked.")
+        if not self._verify_grant(capability_grant, "records_tool"):
+            raise PermissionError("Unauthorized tool access capability.")
+
+        import glob
+        from pathlib import Path
+        from harvestamp.extraction.document_extractor import DocumentExtractor, redact_for_role
+
+        fixtures_dir = Path(__file__).resolve().parents[2] / "fixtures" / "documents"
+        if not fixtures_dir.is_dir():
+            return []
+
+        extractor = DocumentExtractor()
+        restricted_roles = {"field_employee", "seasonal_worker", "crew_member", "employee"}
+        results: List[Dict[str, Any]] = []
+
+        for txt_path in sorted(fixtures_dir.glob("*.txt")):
+            extraction = extractor.extract_file(
+                file_path=txt_path,
+                farm_id=target_farm_id,
+            )
+
+            # Apply optional filters
+            if document_type and extraction.document_type != document_type:
+                continue
+            if farm_id_filter:
+                fixture_farm = extraction.extracted_fields.get("farm_id") or target_farm_id
+                if fixture_farm != farm_id_filter:
+                    continue
+
+            if user_role in restricted_roles:
+                payload = redact_for_role(extraction, user_role)
+            else:
+                payload = extraction.to_dict()
+
+            results.append({
+                "evidence_id": extraction.evidence_id,
+                "document_id": extraction.document_id,
+                "document_type": extraction.document_type,
+                "farm_id": extraction.farm_id,
+                "source_file_reference": extraction.source_file_reference,
+                "extraction_status": extraction.extraction_status,
+                "extraction_confidence": extraction.extraction_confidence,
+                "missing_fields": list(extraction.missing_fields),
+                "human_review": extraction.human_review.to_dict(),
+                "trust_tier": "T2 Farm-supplied document",
+                "privacy_class": extraction.data_sensitivity,
+                "extracted_fields": payload.get("extracted_fields", extraction.extracted_fields),
+                "source_name": extraction.source_name,
+                "status": "draft",
+                "verification": "unverified",
+                "origin": "local_user_provided",
+                "official_update_allowed": False,
+                "external_actions_allowed": False,
+                "decision_anchor_status": "draft_pending_review",
+            })
+
+        return results
+
+
 # HARVESTAMP_LOCAL_DOCUMENT_EXTRACTION_EXTENSION
 try:
     from harvestamp.extraction.gateway_extension import register_tool_gateway_extension
