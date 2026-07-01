@@ -410,7 +410,7 @@ def build_notes(document_type: str, missing_fields: List[str], redactions: List[
         notes.append("Missing or ambiguous fields must be resolved before the record can be approved.")
     if redactions:
         notes.append("Sensitive payment or credential-like content was redacted before evidence summary generation.")
-    notes.append("No external message, order, supplier selection, or official record update was executed.")
+    notes.append("No outside communication, purchase, vendor choice, record change, or farm-system change has been made.")
     return notes
 
 
