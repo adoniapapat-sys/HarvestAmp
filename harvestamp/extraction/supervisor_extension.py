@@ -250,8 +250,8 @@ def _recommendation_from_payload(payload: Dict[str, Any]) -> str:
     if payload.get("extraction_confidence") == "low" or payload.get("document_type") == "unknown":
         return "Ask the user to clarify the missing or ambiguous fields. Do not update official records."
     if payload.get("missing_fields"):
-        return "Review the extracted draft and resolve missing fields before approving any official record update."
-    return "Review the extracted draft before approving any official record update. No external action has been taken."
+        return "Review the extracted draft and resolve missing fields before any farm-system or record change is approved."
+    return "Review the extracted draft before any farm-system or record change is approved. No outside action has been taken."
 
 
 def _human_review_for_runner(review: Dict[str, Any]) -> Dict[str, Any]:

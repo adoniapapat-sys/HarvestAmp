@@ -901,7 +901,7 @@ class RecordsAgent(BaseAgent):
             harv_irr_notes.append(f"Grain storage/bin readiness watch: low stock for: {', '.join(low_stock_grain_storage)}.")
             harv_irr_recs.append("Verify bin cleanout and grain sampling preparation checklist.")
         if harv_irr_notes:
-            harv_irr_notes.append("This is inventory readiness context only and not a completed harvest, packing update, customer contact, supplier contact, food-safety log update, official record update, or inventory update.")
+            harv_irr_notes.append("This is inventory readiness context only. No harvest, packing, food-safety, contact, record, or farm-system change has been made.")
             
         note_str_harv = " " + " ".join(harv_irr_notes) if harv_irr_notes else ""
         rec_str_harv = " " + " ".join(harv_irr_recs) if harv_irr_recs else ""
@@ -912,7 +912,7 @@ class RecordsAgent(BaseAgent):
             pkg_market_notes.append(f"Packaging/market supply watch: low stock for: {', '.join(low_stock_packaging_market)}.")
             pkg_market_recs.append("Review packaging and market supply lists for owner review.")
         if pkg_market_notes:
-            pkg_market_notes.append("This is inventory readiness context only and not a completed harvest, packing update, customer contact, supplier contact, food-safety log update, official record update, or inventory update.")
+            pkg_market_notes.append("This is inventory readiness context only. No harvest, packing, food-safety, contact, record, or farm-system change has been made.")
             
         note_str_pkg = " " + " ".join(pkg_market_notes) if pkg_market_notes else ""
         rec_str_pkg = " " + " ".join(pkg_market_recs) if pkg_market_recs else ""

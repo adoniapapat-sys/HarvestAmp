@@ -102,7 +102,7 @@ def test_records_agent_pvf_readiness(pvf_profile):
     assert "Verify bin cleanout and grain sampling preparation checklist" in f["recommendation"]
     
     # Assert safety disclaimer is present
-    assert "This is inventory readiness context only and not a completed harvest" in f["summary"]
+    assert "This is inventory readiness context only. No harvest, packing, food-safety, contact, record, or farm-system change has been made." in f["summary"]
 
 def test_records_agent_gbo_readiness(gbo_profile):
     """Verify RecordsAgent surfaces GBO harvest/wash-pack/packaging/market readiness context."""
