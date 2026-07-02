@@ -114,3 +114,10 @@ Project Architecture/
 # macOS
 .AppleDouble
 .LSOverride
+
+# Local UI and patch backups
+local_backups/
+streamlit_app_focused*.py
+streamlit_app*_backup_*.py
+streamlit_app*_before_*.py
+*.bak

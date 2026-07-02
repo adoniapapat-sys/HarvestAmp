@@ -122,8 +122,17 @@ class WeatherAgent(BaseAgent):
             
         finding = None
         if topic == "spray_window":
-            summary = "Tomorrow morning has a favorable wind window (6-10 mph) and low rain probability. Afternoon wind speed rises to 15-22 mph with evening storm chance."
-            recommendation = "Morning window is possible for spraying West Ridge. Afternoon is high-wind risk and not recommended."
+            summary = (
+                "Weather context shows comparatively lower wind risk tomorrow morning than later in the day. "
+                "HarvestAmp does not determine whether spraying should occur. "
+                "Afternoon wind speed rises to 15-22 mph with evening storm chance and should be flagged for qualified review."
+            )
+            recommendation = (
+                "Morning conditions may warrant qualified review by a licensed applicator or farm manager. "
+                "Afternoon wind conditions should be flagged for licensed-applicator review. "
+                "This is not a spray recommendation or treatment-timing instruction. "
+                "HarvestAmp does not recommend pesticide products, rates, tank-mixes, treatment-timing, or spray instructions."
+            )
             finding = self.create_finding(
                 work_item, "spray_window", summary, recommendation, "today", "high", evidence_ids,
                 assumptions=["No rain occurs earlier than forecast."],

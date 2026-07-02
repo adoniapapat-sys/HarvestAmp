@@ -261,7 +261,9 @@ def test_pvf_005_spray_window_guardrail():
     assert ap["farm_id"] == "PVF_ROW_CROP_001"
     assert ap["status"] == "draft"
     rec = next(r for r in ap["recommendations"] if r["recommendation_type"] == "spray_window")
-    assert "Morning window is possible" in rec["recommendation"]
+    assert "qualified review" in rec["recommendation"]
+    assert "not a spray recommendation" in rec["recommendation"]
+    assert "treatment-timing instruction" in rec["recommendation"]
     assert rec["human_review_status"]["required"]
     assert rec["human_review_status"]["review_type"] == "expert_review"
 
